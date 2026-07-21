@@ -2,7 +2,10 @@ const { createApp } = require('./app');
 const { getEnv, validateEnv } = require('./config/env');
 
 function startServer() {
-  const env = validateEnv(getEnv(), { requireDatabase: process.env.NODE_ENV === 'production' });
+  const env = validateEnv(getEnv(), {
+    requireDatabase: process.env.NODE_ENV === 'production',
+    requireJwt: process.env.NODE_ENV !== 'test',
+  });
   const app = createApp({ env });
   const server = app.listen(env.port, () => {
     console.log(`[server] Aplicação ouvindo na porta ${env.port}`);

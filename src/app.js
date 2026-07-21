@@ -1,10 +1,13 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const { getEnv } = require('./config/env');
 const { createPool } = require('./config/database');
 const createSystemRoutes = require('./routes/systemRoutes');
+const createAuthRoutes = require('./routes/authRoutes');
+const { createAuthService } = require('./services/authService');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
 
@@ -40,6 +43,7 @@ function registerLegacyPlanRoutes(app, env) {
 function createApp(options = {}) {
   const env = options.env || getEnv();
   const pool = options.pool || createPool(env);
+  const authService = options.authService || createAuthService({ db: pool, env });
   const app = express();
 
   app.disable('x-powered-by');
@@ -52,6 +56,7 @@ function createApp(options = {}) {
   }));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  app.use(cookieParser());
   app.use(express.static(path.join(__dirname, '../public')));
 
   app.use((req, res, next) => {
@@ -74,6 +79,7 @@ function createApp(options = {}) {
   });
 
   app.use(createSystemRoutes({ pool }));
+  app.use('/api/auth', createAuthRoutes({ authService, env }));
   registerLegacyPlanRoutes(app, env);
 
   app.use(notFoundHandler);

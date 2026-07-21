@@ -1,16 +1,38 @@
 const { EventEmitter } = require('node:events');
+const { Duplex, Readable } = require('node:stream');
 
-function invokeApp(app, { method = 'GET', url = '/' } = {}) {
+function invokeApp(app, { method = 'GET', url = '/', headers = {}, body } = {}) {
   return new Promise((resolve, reject) => {
-    const req = new EventEmitter();
+    const requestBody = body === undefined ? '' : JSON.stringify(body);
+    const requestHeaders = {
+      host: 'localhost',
+      ...Object.fromEntries(
+        Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
+      ),
+    };
+
+    if (body !== undefined) {
+      requestHeaders['content-type'] = 'application/json';
+      requestHeaders['content-length'] = Buffer.byteLength(requestBody);
+    }
+
+    const req = new Readable({ read() {} });
     req.method = method;
     req.url = url;
     req.originalUrl = url;
-    req.headers = { host: 'localhost' };
+    req.headers = requestHeaders;
     req.httpVersion = '1.1';
-    req.connection = { encrypted: false };
-    req.socket = req.connection;
+    const socket = new Duplex({
+      read() {},
+      write(_chunk, _encoding, callback) { callback(); },
+    });
+    socket.encrypted = false;
+    req.connection = socket;
+    req.socket = socket;
+    req.ip = '127.0.0.1';
     req.get = (name) => req.headers[name.toLowerCase()];
+    req.push(requestBody);
+    req.push(null);
 
     const res = new EventEmitter();
     res.statusCode = 200;

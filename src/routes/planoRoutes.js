@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const geminiService = require('../services/geminiService');
 const supabaseService = require('../services/supabaseService');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateLegacyToken: authenticateToken } = require('../middleware/legacyAuth');
 
 
 router.post('/gerar', authenticateToken, async (req, res) => {

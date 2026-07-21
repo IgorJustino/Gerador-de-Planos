@@ -9,12 +9,18 @@ function errorHandler(error, req, res, next) {
     console.error('[http] Erro não tratado:', error);
   }
 
-  res.status(statusCode).json({
+  const response = {
     error: {
       code,
       message,
     },
-  });
+  };
+
+  if (Array.isArray(error.details) && error.details.length > 0) {
+    response.error.details = error.details;
+  }
+
+  res.status(statusCode).json(response);
 }
 
 module.exports = errorHandler;

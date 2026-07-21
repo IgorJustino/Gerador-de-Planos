@@ -11,6 +11,24 @@ function parseInteger(value, fallback) {
   return Number.isInteger(parsed) ? parsed : fallback;
 }
 
+function parseDurationToMs(value) {
+  const match = String(value).trim().match(/^(\d+)\s*(s|m|h|d)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number.parseInt(match[1], 10);
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+
+  return amount * multipliers[match[2].toLowerCase()];
+}
+
 function getEnv(source = process.env) {
   const nodeEnv = source.NODE_ENV || 'development';
 
@@ -21,6 +39,21 @@ function getEnv(source = process.env) {
     databasePoolMax: parseInteger(source.DATABASE_POOL_MAX, 5),
     databaseSsl: source.DATABASE_SSL === 'true' || nodeEnv === 'production',
     corsOrigin: source.CORS_ORIGIN || 'http://localhost:3000',
+    jwtSecret: source.JWT_SECRET || null,
+    jwtExpiresIn: source.JWT_EXPIRES_IN || '8h',
+    jwtExpiresInMs: parseDurationToMs(source.JWT_EXPIRES_IN || '8h'),
+    cookieName: source.COOKIE_NAME || 'copiloto_session',
+    cookieSecure: source.COOKIE_SECURE === 'true' || nodeEnv === 'production',
+    cookieSameSite: (source.COOKIE_SAME_SITE || 'lax').toLowerCase(),
+    authLoginRateLimitMax: parseInteger(source.AUTH_LOGIN_RATE_LIMIT_MAX, 10),
+    authRegisterRateLimitMax: parseInteger(source.AUTH_REGISTER_RATE_LIMIT_MAX, 5),
+    authRateLimitWindowMs: parseInteger(
+      source.AUTH_RATE_LIMIT_WINDOW_MS,
+      15 * 60 * 1000
+    ),
+    geminiApiKey: source.GEMINI_API_KEY || null,
+    geminiModel: source.GEMINI_MODEL || null,
+    geminiTimeoutMs: parseInteger(source.GEMINI_TIMEOUT_MS, 30000),
     legacy: {
       supabaseUrl: source.SUPABASE_URL || null,
       supabaseAnonKey: source.SUPABASE_ANON_KEY || null,
@@ -31,21 +64,38 @@ function getEnv(source = process.env) {
 }
 
 function validateEnv(env = getEnv(), options = {}) {
-  const required = options.requireDatabase ? ['DATABASE_URL'] : [];
-  const missing = required.filter((name) => {
-    if (name === 'DATABASE_URL') {
-      return !env.databaseUrl;
-    }
+  const missing = [];
 
-    return false;
-  });
+  if (options.requireDatabase && !env.databaseUrl) {
+    missing.push('DATABASE_URL');
+  }
 
-  if (missing.length > 0) {
+  if (options.requireJwt && !env.jwtSecret) {
+    missing.push('JWT_SECRET');
+  }
+
+  const validSameSite = ['lax', 'strict', 'none'];
+  const invalidSameSite = !validSameSite.includes(env.cookieSameSite);
+  const invalidDuration = !env.jwtExpiresInMs;
+
+  const insecureProductionSecret =
+    env.nodeEnv === 'production' && env.jwtSecret === 'dev-only-change-this-secret';
+
+  if (
+    missing.length > 0 ||
+    invalidSameSite ||
+    invalidDuration ||
+    insecureProductionSecret
+  ) {
+    const details = [...missing];
+    if (invalidSameSite) details.push('COOKIE_SAME_SITE');
+    if (invalidDuration) details.push('JWT_EXPIRES_IN');
+    if (insecureProductionSecret) details.push('JWT_SECRET');
     const error = new Error(
-      `Variáveis de ambiente obrigatórias ausentes: ${missing.join(', ')}`
+      `Configuração de ambiente inválida: ${details.join(', ')}`
     );
     error.code = 'ENV_VALIDATION_ERROR';
-    error.missing = missing;
+    error.missing = details;
     throw error;
   }
 
@@ -54,5 +104,6 @@ function validateEnv(env = getEnv(), options = {}) {
 
 module.exports = {
   getEnv,
+  parseDurationToMs,
   validateEnv,
 };

@@ -26,6 +26,22 @@ services:
         value: "5"
       - key: CORS_ORIGIN
         sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: "8h"
+      - key: COOKIE_NAME
+        value: copiloto_session
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAME_SITE
+        value: lax
+      - key: AUTH_LOGIN_RATE_LIMIT_MAX
+        value: "10"
+      - key: AUTH_REGISTER_RATE_LIMIT_MAX
+        value: "5"
+      - key: AUTH_RATE_LIMIT_WINDOW_MS
+        value: "900000"
       # Integrações legadas; serão removidas após o MVP.
       - key: SUPABASE_URL
         sync: false

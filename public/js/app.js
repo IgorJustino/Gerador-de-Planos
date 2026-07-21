@@ -42,73 +42,19 @@ btnLogout.addEventListener('click', handleLogout);
 
 async function checkAuthentication() {
     try {
-        console.log('🔍 Verificando autenticação no index.html...');
-        
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        console.log('📋 Session:', session);
-        console.log('📋 Error:', error);
-        
-        if (error || !session) {
-            console.log('❌ Sem sessão válida, redirecionando para login.html');
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok || !payload.user) {
             window.location.href = 'login.html';
             return false;
         }
 
-        authToken = session.access_token;
-        userEmail = session.user.email;
-        
-        console.log('✅ Sessão válida encontrada');
-        console.log('📋 Email:', userEmail);
-        console.log('📋 Token:', authToken.substring(0, 20) + '...');
-
-        // Buscar o ID do usuário na tabela usuarios (não o auth.users.id)
-        const { data: userData, error: userError } = await supabase
-            .from('usuarios')
-            .select('id')
-            .eq('email', userEmail)
-            .single();
-
-        console.log('📋 Busca usuario:', { userData, userError });
-
-        if (userError || !userData) {
-            console.warn('⚠️ Erro ao buscar dados do usuário:', userError);
-            // Se não encontrar o usuário na tabela, criar um
-            const { data: newUser, error: createError } = await supabase
-                .from('usuarios')
-                .insert([{
-                    nome: userEmail.split('@')[0],
-                    email: userEmail,
-                    papel: 'professor'
-                }])
-                .select('id')
-                .single();
-
-            console.log('📋 Criar usuario:', { newUser, createError });
-
-            if (createError) {
-                console.error('❌ Erro ao criar usuário:', createError);
-                alert('Erro ao configurar sua conta. Faça login novamente.');
-                await supabase.auth.signOut();
-                window.location.href = 'login.html';
-                return false;
-            }
-
-            userId = newUser.id;
-        } else {
-            userId = userData.id;
-        }
-
-        // Atualizar UI com email do usuário
-        if (userEmailElement) {
-            userEmailElement.textContent = userEmail;
-        }
-
-        console.log('✅ Usuário autenticado:', userEmail);
-        console.log('📋 User ID (tabela usuarios):', userId);
+        userId = payload.user.id;
+        userEmail = payload.user.email;
+        if (userEmailElement) userEmailElement.textContent = userEmail;
         return true;
     } catch (error) {
-        console.error('❌ Erro ao verificar autenticação:', error);
         window.location.href = 'login.html';
         return false;
     }
@@ -116,21 +62,15 @@ async function checkAuthentication() {
 
 async function handleLogout() {
     try {
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-            throw error;
-        }
-
-        // Limpar dados locais
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
         authToken = null;
         userId = null;
         userEmail = null;
-
-        // Redirecionar para login
         window.location.href = 'login.html';
     } catch (error) {
-        console.error('Erro ao fazer logout:', error);
         alert('Erro ao sair. Tente novamente.');
     }
 }
