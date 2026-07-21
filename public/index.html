@@ -11,9 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -46,26 +43,6 @@
                         placeholder="Ex: Fotossíntese"
                         autocomplete="off"
                     >
-                </div>
-                
-                <div class="form-group">
-                    <label for="disciplina">Disciplina (opcional)</label>
-                    <select id="disciplina" name="disciplina">
-                        <option value="">Selecione...</option>
-                        <option value="Matemática">Matemática</option>
-                        <option value="Ciências">Ciências</option>
-                        <option value="História">História</option>
-                        <option value="Geografia">Geografia</option>
-                        <option value="Língua Portuguesa">Língua Portuguesa</option>
-                        <option value="Língua Inglesa">Língua Inglesa</option>
-                        <option value="Educação Física">Educação Física</option>
-                        <option value="Artes">Artes</option>
-                        <option value="Filosofia">Filosofia</option>
-                        <option value="Sociologia">Sociologia</option>
-                        <option value="Física">Física</option>
-                        <option value="Química">Química</option>
-                        <option value="Biologia">Biologia</option>
-                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -104,10 +81,11 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="observacoes">Observações (opcional)</label>
+                    <label for="contextoAdicional">Contexto adicional (opcional)</label>
                     <textarea 
-                        id="observacoes" 
-                        name="observacoes" 
+                        id="contextoAdicional"
+                        name="contextoAdicional"
+                        maxlength="1000"
                         placeholder="Adicione informações extras sobre a turma ou necessidades específicas..."
                     ></textarea>
                 </div>
@@ -119,7 +97,7 @@
         </div>
         
         <!-- Área de Resultado -->
-        <div id="resultado"></div>
+        <div id="resultado" aria-live="polite"></div>
 
         <!-- Seção de Planos Anteriores -->
         <div class="card" id="planosAnteriores" style="display: none;">
@@ -127,14 +105,15 @@
                 <span class="secao-icon">📚</span>
                 <h2 style="margin: 0;">Meus Planos de Aula</h2>
             </div>
-            <div id="listaPlanos">
+            <div id="listaPlanos" aria-live="polite">
                 <p style="text-align: center; color: #718096;">Carregando...</p>
             </div>
+            <div id="pagination" class="pagination" aria-label="Paginação dos planos"></div>
         </div>
 
         <!-- Botão para mostrar planos anteriores -->
         <div style="text-align: center; margin: 20px 0;">
-            <button type="button" class="btn btn-secondary" id="btnMostrarPlanos" onclick="togglePlanosAnteriores()">
+            <button type="button" class="btn btn-secondary" id="btnMostrarPlanos">
                 📚 Ver Meus Planos Anteriores
             </button>
         </div>
@@ -147,6 +126,9 @@
     </div>
 
     <!-- JavaScript -->
+    <script src="js/apiClient.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/lessonPlanRenderer.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

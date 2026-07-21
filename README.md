@@ -31,6 +31,11 @@ Migrations não são executadas automaticamente pelo processo web.
 
 ## Status da modernização
 
-O Marco 2 e a subetapa 3A estão concluídos. A autenticação própria por cookie
-`httpOnly` está sendo implementada no Marco 3B. A integração legada com o
-Supabase permanece isolada e condicional durante a transição.
+Os Marcos 2, 3A, 3B, 3C e 3D estão concluídos. O fluxo principal usa
+autenticação própria por cookie `httpOnly`, Gemini com JSON estruturado,
+PostgreSQL e histórico privado por usuário. O legado do Supabase permanece
+isolado em `/api/legacy/*` apenas durante a transição.
+
+O frontend moderno não armazena JWT, não usa Supabase e renderiza a resposta da
+IA com `textContent` e elementos DOM. Ainda não há edição, versionamento, RAG,
+feedback ou métricas avançadas.

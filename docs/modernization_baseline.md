@@ -177,3 +177,18 @@ deve ser considerado cliente do fluxo moderno até a 3D.
 
 O catálogo BNCC, a validação oficial de códigos, embeddings, `pgvector` e RAG
 ainda não estão implementados.
+
+## 8. Atualização do Marco 3D
+
+O frontend principal foi conectado aos endpoints modernos. O cliente HTTP
+centraliza `fetch`, cookies, erros HTTP e respostas 401/429. A página de login
+usa cadastro, login e sessão próprias; a página principal usa geração,
+histórico, paginação e consulta individual.
+
+O conteúdo estruturado é renderizado por criação de elementos DOM e
+`textContent`. Não há JWT em `localStorage`, `sessionStorage` ou IndexedDB, e
+as páginas públicas não possuem mais SDK, URL ou chave do Supabase.
+
+As referências legadas permanecem no backend (`supabaseService.js`,
+`legacyAuth.js`, `geminiService.js`) e nas configurações opcionais necessárias
+para `/api/legacy/*`.

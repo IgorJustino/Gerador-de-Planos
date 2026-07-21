@@ -484,6 +484,88 @@ footer p {
     flex-shrink: 0;
 }
 
+.secao-header {
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+}
+
+.section-title {
+    flex: 1;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.step-item {
+    border-left: 4px solid #667eea;
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+}
+
+.step-item h3,
+.step-item p {
+    margin-bottom: 8px;
+}
+
+.lesson-list {
+    padding-left: 22px;
+}
+
+.lesson-list li {
+    margin-bottom: 8px;
+}
+
+.api-message {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    color: #2d3748;
+    background: #edf2f7;
+}
+
+.api-message.success {
+    color: #065f46;
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+}
+
+.api-message.error {
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: #718096;
+}
+
+.empty-state p:first-child {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.pagination-label {
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.pagination .btn-acao:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-acao {
     padding: 8px 16px;
     border: 2px solid;

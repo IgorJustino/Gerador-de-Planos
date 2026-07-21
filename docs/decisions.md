@@ -100,6 +100,18 @@ O serviço legado continua em `src/services/geminiService.js` e é exposto apena
 em `/api/legacy/planos`. O endpoint moderno `/api/planos/gerar` não possui
 fallback silencioso para o parser legado.
 
+## ADR-010 — Frontend moderno
+
+**Decisão:** manter HTML, CSS e JavaScript sem framework nesta fase. As
+chamadas passam por `public/js/apiClient.js`, sempre com
+`credentials: 'include'`; o JWT permanece exclusivamente no cookie
+`httpOnly`.
+
+O frontend principal usa somente `/api/auth/*` e `/api/planos/*`. A resposta da
+IA é renderizada com criação de elementos e `textContent`, sem interpolar dados
+externos em `innerHTML`. O legado Supabase permanece somente no backend e em
+`/api/legacy/*` durante a transição.
+
 ## ADR-007 — BNCC e RAG
 
 **Decisão:** separar a evolução em duas fases.

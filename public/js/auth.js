@@ -1,154 +1,105 @@
-const AUTH_API = '/api/auth';
+(function initializeAuthPage() {
+    const AUTH_API = '/api/auth';
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-    setupEventListeners();
-});
-
-async function parseResponse(response) {
-    const text = await response.text();
-
-    if (!text) {
-        return {};
+    function showMessage(text, type) {
+        const message = document.getElementById('message');
+        message.textContent = text;
+        message.className = `message ${type}`;
+        message.style.display = 'block';
     }
 
-    try {
-        return JSON.parse(text);
-    } catch (_error) {
-        return {};
+    function hideMessage() {
+        const message = document.getElementById('message');
+        message.textContent = '';
+        message.style.display = 'none';
     }
-}
 
-function getErrorMessage(payload, fallback) {
-    return payload?.error?.message || fallback;
-}
+    function validPassword(password) {
+        return password.length >= 8 && password.length <= 72 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+    }
 
-async function checkAuth() {
-    try {
-        const response = await fetch(`${AUTH_API}/me`, {
-            credentials: 'include'
-        });
+    function setFormLoading(button, loading, idleText) {
+        AppUi.setBusy(button, loading, 'Processando...', idleText);
+    }
 
-        if (response.ok) {
-            window.location.href = 'index.html';
+    async function checkAuth() {
+        try {
+            const payload = await ApiClient.request(`${AUTH_API}/me`, { skipUnauthorized: true });
+            if (payload?.user) window.location.href = '/';
+        } catch (_error) {
+            // A tela permanece disponível quando não há sessão.
         }
-    } catch (_error) {
-        // A tela de login continua disponível se a API estiver indisponível.
     }
-}
 
-function setupEventListeners() {
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach((tab) => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
+        document.querySelectorAll('.form-content').forEach((form) => {
+            form.classList.toggle('active', form.id === `${tabName}-form`);
+        });
+        hideMessage();
+    }
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        hideMessage();
+        const form = event.currentTarget;
+        const button = form.querySelector('.submit-btn');
+        const email = document.getElementById('login-email').value.trim();
+        const senha = document.getElementById('login-password').value;
+        setFormLoading(button, true, 'Entrar');
+
+        try {
+            await ApiClient.request(`${AUTH_API}/login`, {
+                method: 'POST',
+                body: { email, senha },
+            });
+            window.location.href = '/';
+        } catch (error) {
+            showMessage(error.message || 'Não foi possível fazer login.', 'error');
+            setFormLoading(button, false, 'Entrar');
+        }
+    }
+
+    async function handleRegister(event) {
+        event.preventDefault();
+        hideMessage();
+        const form = event.currentTarget;
+        const button = form.querySelector('.submit-btn');
+        const nome = document.getElementById('register-name').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const senha = document.getElementById('register-password').value;
+        const confirmacao = document.getElementById('register-password-confirm').value;
+
+        if (!validPassword(senha)) {
+            showMessage('A senha deve ter de 8 a 72 caracteres e conter letras e números.', 'error');
+            return;
+        }
+        if (senha !== confirmacao) {
+            showMessage('As senhas não coincidem.', 'error');
+            return;
+        }
+
+        setFormLoading(button, true, 'Criar Conta');
+        try {
+            await ApiClient.request(`${AUTH_API}/register`, {
+                method: 'POST',
+                body: { nome, email, senha },
+            });
+            window.location.href = '/';
+        } catch (error) {
+            showMessage(error.message || 'Não foi possível criar a conta.', 'error');
+            setFormLoading(button, false, 'Criar Conta');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+        document.querySelectorAll('.tab').forEach((tab) => {
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        });
+        document.getElementById('login-form-element').addEventListener('submit', handleLogin);
+        document.getElementById('register-form-element').addEventListener('submit', handleRegister);
     });
-
-    document.getElementById('login-form-element').addEventListener('submit', handleLogin);
-    document.getElementById('register-form-element').addEventListener('submit', handleRegister);
-}
-
-function switchTab(tabName) {
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
-
-    document.querySelectorAll('.form-content').forEach(form => form.classList.remove('active'));
-    document.getElementById(`${tabName}-form`).classList.add('active');
-    hideMessage();
-}
-
-function showMessage(text, type) {
-    const messageEl = document.getElementById('message');
-    messageEl.textContent = text;
-    messageEl.className = `message ${type}`;
-    messageEl.style.display = 'block';
-}
-
-function hideMessage() {
-    const messageEl = document.getElementById('message');
-    messageEl.style.display = 'none';
-}
-
-function setLoading(button, isLoading, originalText) {
-    if (isLoading) {
-        button.disabled = true;
-        button.innerHTML = '<span class="spinner"></span>Processando...';
-    } else {
-        button.disabled = false;
-        button.textContent = originalText;
-    }
-}
-
-async function handleLogin(event) {
-    event.preventDefault();
-    hideMessage();
-
-    const email = document.getElementById('login-email').value.trim();
-    const senha = document.getElementById('login-password').value;
-    const button = event.target.querySelector('.submit-btn');
-    setLoading(button, true, 'Entrar');
-
-    try {
-        const response = await fetch(`${AUTH_API}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ email, senha })
-        });
-        const payload = await parseResponse(response);
-
-        if (!response.ok) {
-            throw new Error(getErrorMessage(payload, 'Credenciais inválidas'));
-        }
-
-        showMessage('Login realizado com sucesso! Redirecionando...', 'success');
-        window.setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 700);
-    } catch (error) {
-        showMessage(error.message || 'Não foi possível fazer login.', 'error');
-        setLoading(button, false, 'Entrar');
-    }
-}
-
-async function handleRegister(event) {
-    event.preventDefault();
-    hideMessage();
-
-    const nome = document.getElementById('register-name').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const senha = document.getElementById('register-password').value;
-    const confirmacao = document.getElementById('register-password-confirm').value;
-    const button = event.target.querySelector('.submit-btn');
-
-    if (senha !== confirmacao) {
-        showMessage('As senhas não coincidem', 'error');
-        return;
-    }
-
-    setLoading(button, true, 'Criar Conta');
-
-    try {
-        const response = await fetch(`${AUTH_API}/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ nome, email, senha })
-        });
-        const payload = await parseResponse(response);
-
-        if (!response.ok) {
-            throw new Error(getErrorMessage(payload, 'Não foi possível criar a conta.'));
-        }
-
-        showMessage('Conta criada com sucesso! Você pode fazer login agora.', 'success');
-        event.target.reset();
-
-        window.setTimeout(() => {
-            switchTab('login');
-            document.getElementById('login-email').value = email;
-        }, 700);
-    } catch (error) {
-        showMessage(error.message || 'Não foi possível criar a conta.', 'error');
-    } finally {
-        setLoading(button, false, 'Criar Conta');
-    }
-}
+}());
