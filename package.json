@@ -1,15 +1,21 @@
 {
   "name": "gerador-planos-aula",
   "version": "1.0.0",
-  "description": "Sistema gerador de planos de aula personalizados com IA (Gemini) e Supabase",
+  "description": "Sistema gerador de planos de aula personalizados com IA",
   "main": "src/server.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "build": "echo 'Build concluído - No build step required'"
+    "build": "node --check src/server.js",
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "migrate:up": "node-pg-migrate up --migrations-dir database/migrations --database-url-var DATABASE_URL",
+    "migrate:down": "node-pg-migrate down --migrations-dir database/migrations --database-url-var DATABASE_URL",
+    "migrate:create": "node-pg-migrate create --migrations-dir database/migrations",
+    "db:seed": "node database/seeds/run.js"
   },
   "keywords": [
     "educacao",
@@ -27,7 +33,9 @@
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-pg-migrate": "^7.9.1",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
