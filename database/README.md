@@ -39,8 +39,10 @@ O `DATABASE_URL` deve apontar para o banco desejado. Em produção, migrations
 devem ser executadas em uma etapa controlada, nunca automaticamente pelo
 processo web.
 
-O Marco 2 cria apenas a extensão `pgcrypto` e a tabela base `users`. As demais
-tabelas do produto serão adicionadas junto aos fluxos dos próximos marcos.
+O Marco 2 criou a extensão `pgcrypto` e a tabela base `users`. A 3A adiciona
+`lesson_plans`, suas constraints, índices e triggers de `updated_at`. As
+tabelas de versões, feedback e métricas serão adicionadas nos próximos
+marcos.
 
 O seed cria o usuário fictício `demo@example.com` com a senha `demo123` para
 uso local. Essa credencial não deve ser usada em produção.
