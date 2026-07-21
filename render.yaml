@@ -10,7 +10,7 @@ services:
     region: oregon
     plan: free
     branch: main
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -18,9 +18,20 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DATABASE_POOL_MAX
+        value: "5"
+      - key: CORS_ORIGIN
+        sync: false
+      # Integrações legadas; serão removidas após o MVP.
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
         sync: false
