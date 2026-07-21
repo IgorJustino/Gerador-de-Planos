@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: planos
+      POSTGRES_USER: planos
+      POSTGRES_PASSWORD: planos
+    ports:
+      - "5432:5432"
+    volumes:
+      - planos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planos -d planos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgresql://planos:planos@postgres:5432/planos
+      DATABASE_POOL_MAX: 5
+      DATABASE_SSL: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  planos_postgres_data:
