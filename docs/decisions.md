@@ -87,6 +87,19 @@ com Zod, timeout, uma retentativa controlada e mocks nos testes.
 O parsing por regex não será usado no fluxo modernizado. Essa implementação
 será feita no Marco 3, depois da fundação técnica e da autenticação.
 
+### Atualização do Marco 3C
+
+O fluxo moderno utiliza `@google/generative-ai@0.24.1`, que suporta resposta
+JSON com `responseMimeType`, `responseSchema` e `AbortSignal`. O modelo é
+configurado por `GEMINI_MODEL`; a versão inicial do prompt é
+`lesson-plan-v1`. A resposta é validada com Zod antes da persistência, com
+timeout configurável e no máximo uma retentativa para resposta estruturalmente
+inválida.
+
+O serviço legado continua em `src/services/geminiService.js` e é exposto apenas
+em `/api/legacy/planos`. O endpoint moderno `/api/planos/gerar` não possui
+fallback silencioso para o parser legado.
+
 ## ADR-007 — BNCC e RAG
 
 **Decisão:** separar a evolução em duas fases.

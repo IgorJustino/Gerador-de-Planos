@@ -51,9 +51,18 @@ function getEnv(source = process.env) {
       source.AUTH_RATE_LIMIT_WINDOW_MS,
       15 * 60 * 1000
     ),
+    generationRateLimitMax: parseInteger(source.GENERATION_RATE_LIMIT_MAX, 5),
+    generationRateLimitWindowMs: parseInteger(
+      source.GENERATION_RATE_LIMIT_WINDOW_MS,
+      60 * 60 * 1000
+    ),
     geminiApiKey: source.GEMINI_API_KEY || null,
     geminiModel: source.GEMINI_MODEL || null,
     geminiTimeoutMs: parseInteger(source.GEMINI_TIMEOUT_MS, 30000),
+    geminiMaxRetries: Math.min(
+      Math.max(parseInteger(source.GEMINI_MAX_RETRIES, 1), 0),
+      1
+    ),
     legacy: {
       supabaseUrl: source.SUPABASE_URL || null,
       supabaseAnonKey: source.SUPABASE_ANON_KEY || null,

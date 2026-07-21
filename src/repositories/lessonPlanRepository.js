@@ -68,6 +68,7 @@ async function findLessonPlansByUser(db, userId, pagination = {}) {
   const result = await db.query(
     `
       SELECT *
+        , COUNT(*) OVER() AS total_count
       FROM lesson_plans
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -76,10 +77,14 @@ async function findLessonPlansByUser(db, userId, pagination = {}) {
     [userId, limit, offset]
   );
 
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count || 0) : 0;
+  const plans = result.rows.map(({ total_count: _totalCount, ...plan }) => plan);
+
   return {
-    plans: result.rows,
+    plans,
     page,
     limit,
+    total,
   };
 }
 

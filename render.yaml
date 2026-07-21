@@ -42,6 +42,10 @@ services:
         value: "5"
       - key: AUTH_RATE_LIMIT_WINDOW_MS
         value: "900000"
+      - key: GENERATION_RATE_LIMIT_MAX
+        value: "5"
+      - key: GENERATION_RATE_LIMIT_WINDOW_MS
+        value: "3600000"
       # Integrações legadas; serão removidas após o MVP.
       - key: SUPABASE_URL
         sync: false
@@ -51,3 +55,7 @@ services:
         sync: false
       - key: GEMINI_MODEL
         sync: false
+      - key: GEMINI_TIMEOUT_MS
+        value: "30000"
+      - key: GEMINI_MAX_RETRIES
+        value: "1"

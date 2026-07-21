@@ -163,3 +163,17 @@ versionados e logs que exibem informações de sessão parcialmente.
 - Definir modelo e dimensão dos embeddings antes de criar a coluna vetorial.
 - Definir limites de timeout, retry e rate limit da geração.
 - Definir política de CORS para o frontend servido pelo próprio Render.
+
+## 7. Atualização do Marco 3C
+
+O backend moderno passou a oferecer `POST /api/planos/gerar`, `GET
+/api/planos` e `GET /api/planos/:id`, todos protegidos pela sessão própria. O
+fluxo usa PostgreSQL, JSON estruturado validado com Zod, prompt versionado
+(`lesson-plan-v1`), timeout e uma retentativa limitada.
+
+O legado do Supabase/Gemini permanece isolado sob `/api/legacy/planos` para a
+transição. O frontend principal ainda não foi adaptado nesta subetapa e não
+deve ser considerado cliente do fluxo moderno até a 3D.
+
+O catálogo BNCC, a validação oficial de códigos, embeddings, `pgvector` e RAG
+ainda não estão implementados.

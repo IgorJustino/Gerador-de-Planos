@@ -7,7 +7,10 @@ const { getEnv } = require('./config/env');
 const { createPool } = require('./config/database');
 const createSystemRoutes = require('./routes/systemRoutes');
 const createAuthRoutes = require('./routes/authRoutes');
+const createLessonPlanRoutes = require('./routes/lessonPlanRoutes');
 const { createAuthService } = require('./services/authService');
+const { createGeminiService } = require('./services/structuredGeminiService');
+const { createLessonPlanService } = require('./services/lessonPlanService');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
 
@@ -24,7 +27,7 @@ function registerLegacyPlanRoutes(app, env) {
     try {
       // Mantém o fluxo antigo disponível enquanto o MVP não o substitui.
       const planoRoutes = require('./routes/planoRoutes');
-      app.use('/api/planos', planoRoutes);
+      app.use('/api/legacy/planos', planoRoutes);
       return;
     } catch (error) {
       console.error('[legacy] Não foi possível carregar as rotas antigas:', error.message);
@@ -44,6 +47,11 @@ function createApp(options = {}) {
   const env = options.env || getEnv();
   const pool = options.pool || createPool(env);
   const authService = options.authService || createAuthService({ db: pool, env });
+  const geminiService = options.geminiService || createGeminiService({ env });
+  const lessonPlanService = options.lessonPlanService || createLessonPlanService({
+    db: pool,
+    geminiService,
+  });
   const app = express();
 
   app.disable('x-powered-by');
@@ -73,13 +81,20 @@ function createApp(options = {}) {
       endpoints: {
         health: 'GET /health',
         readiness: 'GET /ready',
-        gerarPlanoLegado: 'POST /api/planos/gerar',
+        gerarPlano: 'POST /api/planos/gerar',
+        listarPlanos: 'GET /api/planos',
+        gerarPlanoLegado: 'POST /api/legacy/planos/gerar',
       },
     });
   });
 
   app.use(createSystemRoutes({ pool }));
   app.use('/api/auth', createAuthRoutes({ authService, env }));
+  app.use('/api/planos', createLessonPlanRoutes({
+    authService,
+    env,
+    lessonPlanService,
+  }));
   registerLegacyPlanRoutes(app, env);
 
   app.use(notFoundHandler);

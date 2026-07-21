@@ -73,7 +73,7 @@ test('listagem aplica paginação e limita o tamanho máximo', async () => {
     limit: 500,
   });
 
-  assert.deepEqual(result, { plans: [], page: 2, limit: 100 });
+  assert.deepEqual(result, { plans: [], page: 2, limit: 100, total: 0 });
   assert.deepEqual(db.calls[0].values, ['user-1', 100, 100]);
   assert.match(db.calls[0].text, /WHERE user_id = \$1/);
 });
