@@ -241,7 +241,8 @@ router.get('/', authenticateToken, async (req, res) => {
 // GET /api/planos/:id
 // Busca um plano específico por ID
 // ========================================
-router.get('/:id', authenticateToken, async (req, res) => {
+// IDs legados são numéricos; a restrição evita capturar /historico.
+router.get('/:id(\\d+)', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -276,7 +277,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // DELETE /api/planos/:id
 // Deleta um plano de aula
 // ========================================
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id(\\d+)', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
