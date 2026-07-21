@@ -63,12 +63,6 @@ function getEnv(source = process.env) {
       Math.max(parseInteger(source.GEMINI_MAX_RETRIES, 1), 0),
       1
     ),
-    legacy: {
-      supabaseUrl: source.SUPABASE_URL || null,
-      supabaseAnonKey: source.SUPABASE_ANON_KEY || null,
-      geminiApiKey: source.GEMINI_API_KEY || null,
-      geminiModel: source.GEMINI_MODEL || null,
-    },
   };
 }
 

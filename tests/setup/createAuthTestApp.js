@@ -64,12 +64,6 @@ function createAuthTestApp(options = {}) {
     authLoginRateLimitMax: options.loginRateLimitMax || 100,
     authRegisterRateLimitMax: options.registerRateLimitMax || 100,
     authRateLimitWindowMs: 60 * 1000,
-    legacy: {
-      supabaseUrl: null,
-      supabaseAnonKey: null,
-      geminiApiKey: null,
-      geminiModel: null,
-    },
   };
 
   return { app: createApp({ env, pool: db }), db, env };

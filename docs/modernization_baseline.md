@@ -171,9 +171,8 @@ O backend moderno passou a oferecer `POST /api/planos/gerar`, `GET
 fluxo usa PostgreSQL, JSON estruturado validado com Zod, prompt versionado
 (`lesson-plan-v1`), timeout e uma retentativa limitada.
 
-O legado do Supabase/Gemini permanece isolado sob `/api/legacy/planos` para a
-transição. O frontend principal ainda não foi adaptado nesta subetapa e não
-deve ser considerado cliente do fluxo moderno até a 3D.
+O legado do Supabase/Gemini ainda estava isolado sob `/api/legacy/planos` nesta
+fotografia da 3C. A remoção definitiva foi concluída na 3E.
 
 O catálogo BNCC, a validação oficial de códigos, embeddings, `pgvector` e RAG
 ainda não estão implementados.
@@ -189,6 +188,13 @@ O conteúdo estruturado é renderizado por criação de elementos DOM e
 `textContent`. Não há JWT em `localStorage`, `sessionStorage` ou IndexedDB, e
 as páginas públicas não possuem mais SDK, URL ou chave do Supabase.
 
-As referências legadas permanecem no backend (`supabaseService.js`,
-`legacyAuth.js`, `geminiService.js`) e nas configurações opcionais necessárias
-para `/api/legacy/*`.
+As referências de runtime ao legado foram removidas na 3E. Referências ao
+Supabase que permanecem neste documento são históricas e descrevem a versão de
+2025, não a arquitetura ativa.
+
+## 9. Atualização do Marco 3E
+
+As rotas `/api/legacy/*`, os módulos legados de Supabase/Gemini, a pasta de
+migrations antiga do Supabase, as variáveis `SUPABASE_*` e a dependência
+`@supabase/supabase-js` foram removidos. A aplicação ativa depende somente da
+autenticação própria, PostgreSQL, Gemini estruturado e frontend moderno.

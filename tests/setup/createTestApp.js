@@ -29,12 +29,6 @@ function createTestApp({ databaseAvailable = true } = {}) {
       authLoginRateLimitMax: 100,
       authRegisterRateLimitMax: 100,
       authRateLimitWindowMs: 60 * 1000,
-      legacy: {
-        supabaseUrl: null,
-        supabaseAnonKey: null,
-        geminiApiKey: null,
-        geminiModel: null,
-      },
     },
     pool,
   });

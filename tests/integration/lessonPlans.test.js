@@ -106,12 +106,6 @@ function createTestApp() {
     geminiModel: 'test-model',
     geminiTimeoutMs: 100,
     geminiMaxRetries: 1,
-    legacy: {
-      supabaseUrl: null,
-      supabaseAnonKey: null,
-      geminiApiKey: null,
-      geminiModel: null,
-    },
   };
   const content = {
     titulo: 'Plano de teste',

@@ -96,9 +96,8 @@ configurado por `GEMINI_MODEL`; a versão inicial do prompt é
 timeout configurável e no máximo uma retentativa para resposta estruturalmente
 inválida.
 
-O serviço legado continua em `src/services/geminiService.js` e é exposto apenas
-em `/api/legacy/planos`. O endpoint moderno `/api/planos/gerar` não possui
-fallback silencioso para o parser legado.
+O serviço legado foi removido na etapa 3E. O endpoint moderno
+`/api/planos/gerar` não possui fallback para parser legado.
 
 ## ADR-010 — Frontend moderno
 
@@ -109,8 +108,7 @@ chamadas passam por `public/js/apiClient.js`, sempre com
 
 O frontend principal usa somente `/api/auth/*` e `/api/planos/*`. A resposta da
 IA é renderizada com criação de elementos e `textContent`, sem interpolar dados
-externos em `innerHTML`. O legado Supabase permanece somente no backend e em
-`/api/legacy/*` durante a transição.
+externos em `innerHTML`. O legado Supabase não faz parte da arquitetura ativa.
 
 ## ADR-007 — BNCC e RAG
 

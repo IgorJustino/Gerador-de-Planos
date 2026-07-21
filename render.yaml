@@ -46,11 +46,6 @@ services:
         value: "5"
       - key: GENERATION_RATE_LIMIT_WINDOW_MS
         value: "3600000"
-      # Integrações legadas; serão removidas após o MVP.
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL

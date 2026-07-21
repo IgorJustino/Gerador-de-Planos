@@ -11,3 +11,11 @@ test('rota inexistente passa pelo tratamento centralizado de erros', async () =>
   assert.equal(response.status, 404);
   assert.equal(response.body.error.code, 'NOT_FOUND');
 });
+
+test('rotas legadas do Supabase não existem mais', async () => {
+  const { app } = createTestApp();
+  const response = await invokeApp(app, { url: '/api/legacy/planos/gerar' });
+
+  assert.equal(response.status, 404);
+  assert.equal(response.body.error.code, 'NOT_FOUND');
+});

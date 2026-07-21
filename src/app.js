@@ -14,35 +14,6 @@ const { createLessonPlanService } = require('./services/lessonPlanService');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
 
-function hasLegacyConfiguration(env) {
-  return Boolean(
-    env.legacy.supabaseUrl &&
-    env.legacy.supabaseAnonKey &&
-    env.legacy.geminiApiKey
-  );
-}
-
-function registerLegacyPlanRoutes(app, env) {
-  if (hasLegacyConfiguration(env)) {
-    try {
-      // Mantém o fluxo antigo disponível enquanto o MVP não o substitui.
-      const planoRoutes = require('./routes/planoRoutes');
-      app.use('/api/legacy/planos', planoRoutes);
-      return;
-    } catch (error) {
-      console.error('[legacy] Não foi possível carregar as rotas antigas:', error.message);
-    }
-  }
-
-  app.use('/api/planos', (req, res) => {
-    res.status(503).json({
-      sucesso: false,
-      erro: 'As rotas legadas de planos estão desabilitadas neste ambiente.',
-      code: 'LEGACY_ROUTES_DISABLED',
-    });
-  });
-}
-
 function createApp(options = {}) {
   const env = options.env || getEnv();
   const pool = options.pool || createPool(env);
@@ -77,13 +48,11 @@ function createApp(options = {}) {
       mensagem: 'API Gerador de Planos de Aula com IA',
       versao: '2.0.0-foundation',
       status: 'online',
-      legadoPlanosHabilitado: hasLegacyConfiguration(env),
       endpoints: {
         health: 'GET /health',
         readiness: 'GET /ready',
         gerarPlano: 'POST /api/planos/gerar',
         listarPlanos: 'GET /api/planos',
-        gerarPlanoLegado: 'POST /api/legacy/planos/gerar',
       },
     });
   });
@@ -95,8 +64,6 @@ function createApp(options = {}) {
     env,
     lessonPlanService,
   }));
-  registerLegacyPlanRoutes(app, env);
-
   app.use(notFoundHandler);
   app.use(errorHandler);
 
@@ -105,5 +72,4 @@ function createApp(options = {}) {
 
 module.exports = {
   createApp,
-  hasLegacyConfiguration,
 };

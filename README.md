@@ -33,8 +33,8 @@ Migrations não são executadas automaticamente pelo processo web.
 
 Os Marcos 2, 3A, 3B, 3C e 3D estão concluídos. O fluxo principal usa
 autenticação própria por cookie `httpOnly`, Gemini com JSON estruturado,
-PostgreSQL e histórico privado por usuário. O legado do Supabase permanece
-isolado em `/api/legacy/*` apenas durante a transição.
+PostgreSQL e histórico privado por usuário. O legado do Supabase foi removido
+da arquitetura ativa.
 
 O frontend moderno não armazena JWT, não usa Supabase e renderiza a resposta da
 IA com `textContent` e elementos DOM. Ainda não há edição, versionamento, RAG,
