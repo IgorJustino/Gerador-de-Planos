@@ -99,6 +99,14 @@
         <!-- Área de Resultado -->
         <div id="resultado" aria-live="polite"></div>
 
+        <div class="card metrics-card" id="metricsCard" hidden>
+            <div class="secao-header" style="margin-bottom: 20px;">
+                <span class="secao-icon">Resumo</span>
+                <h2 style="margin: 0;">Resumo de uso</h2>
+            </div>
+            <div id="metricsSummary" class="metrics-grid" aria-live="polite"></div>
+        </div>
+
         <div class="card plan-management" id="planManagement" hidden>
             <div class="management-header">
                 <div>
@@ -122,6 +130,46 @@
                 <button type="button" class="btn-acao btn-ver" id="btnSalvarStatus">Salvar status</button>
             </div>
             <div id="planActionMessage" aria-live="polite"></div>
+        </div>
+
+        <div class="card feedback-panel" id="feedbackPanel" hidden>
+            <div class="management-header">
+                <div>
+                    <h2>Avaliar plano</h2>
+                    <p class="plano-data">A avaliação não altera o conteúdo nem o status do plano.</p>
+                </div>
+            </div>
+            <form id="formFeedback">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="feedbackRating">Nota *</label>
+                        <select id="feedbackRating" required>
+                            <option value="">Selecione...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="feedbackUseful">
+                            Foi útil?
+                        </label>
+                        <label>
+                            <input type="checkbox" id="feedbackUsedInClass">
+                            Foi usado em aula?
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="feedbackComment">Comentário</label>
+                    <textarea id="feedbackComment" maxlength="1000"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btnSalvarFeedback">Salvar avaliação</button>
+            </form>
+            <div id="feedbackMessage" aria-live="polite"></div>
         </div>
 
         <div class="card edit-panel" id="editPanel" hidden>
@@ -211,6 +259,45 @@
                 <span class="secao-icon">📚</span>
                 <h2 style="margin: 0;">Meus Planos de Aula</h2>
             </div>
+            <form id="formFiltros" class="filters-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="filterTema">Buscar por tema</label>
+                        <input type="text" id="filterTema" maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterStatus">Status</label>
+                        <select id="filterStatus">
+                            <option value="">Todos</option>
+                            <option value="draft">Rascunho</option>
+                            <option value="reviewed">Revisado</option>
+                            <option value="approved">Aprovado</option>
+                            <option value="archived">Arquivado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filterNivel">Nível de ensino</label>
+                        <input type="text" id="filterNivel" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterBNCC">Código BNCC</label>
+                        <input type="text" id="filterBNCC" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="filterSort">Ordenar</label>
+                        <select id="filterSort">
+                            <option value="created_desc">Mais recentes</option>
+                            <option value="created_asc">Mais antigos</option>
+                            <option value="updated_desc">Atualizados recentemente</option>
+                            <option value="updated_asc">Atualizados há mais tempo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filters-actions">
+                    <button type="submit" class="btn-acao btn-ver" id="btnAplicarFiltros">Aplicar filtros</button>
+                    <button type="button" class="btn-acao btn-ver" id="btnLimparFiltros">Limpar filtros</button>
+                </div>
+            </form>
             <div id="listaPlanos" aria-live="polite">
                 <p style="text-align: center; color: #718096;">Carregando...</p>
             </div>

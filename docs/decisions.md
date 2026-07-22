@@ -139,6 +139,22 @@ são operacionais e não criam versões de conteúdo. A interface do Marco 4C us
 esses contratos para edição, consulta de versões, status e exclusão sem
 armazenar tokens no navegador.
 
+## ADR-013 — Feedback e métricas básicas
+
+**Decisão:** feedback é armazenado em `lesson_plan_feedbacks`, com um registro
+por usuário e plano. Novo envio atualiza o feedback existente. Feedback não
+cria versão e não altera status automaticamente.
+
+As métricas básicas são privadas por usuário e usam apenas dados persistidos em
+planos, versões e feedbacks. Tempo médio de IA não será exibido enquanto a
+latência não estiver persistida de forma confiável.
+
+## ADR-014 — Produto antes de RAG
+
+**Decisão:** a sprint atual melhora produto, UX, feedback, métricas e preparo
+de deploy. Catálogo BNCC completo, embeddings, `pgvector` e RAG ficam para uma
+sprint futura de IA avançada.
+
 ## ADR-007 — BNCC e RAG
 
 **Decisão:** separar a evolução em duas fases.

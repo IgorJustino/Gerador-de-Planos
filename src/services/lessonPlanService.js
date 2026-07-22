@@ -95,8 +95,16 @@ function createLessonPlanService({
     return serializeLessonPlan(plan);
   }
 
-  async function listLessonPlans({ userId, page, limit }) {
-    const result = await repository.findLessonPlansByUser(db, userId, { page, limit });
+  async function listLessonPlans({ userId, page, limit, status, nivelEnsino, codigoBNCC, tema, sort }) {
+    const result = await repository.findLessonPlansByUser(db, userId, {
+      page,
+      limit,
+      status,
+      nivelEnsino,
+      codigoBNCC,
+      tema,
+      sort,
+    });
     return {
       items: result.plans.map(serializeLessonPlan),
       pagination: {

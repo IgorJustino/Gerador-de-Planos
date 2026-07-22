@@ -14,8 +14,7 @@ function createLessonPlanController({ lessonPlanService }) {
   const list = asyncHandler(async (req, res) => {
     const result = await lessonPlanService.listLessonPlans({
       userId: req.user.id,
-      page: req.query.page,
-      limit: req.query.limit,
+      ...req.query,
     });
 
     res.status(200).json(result);

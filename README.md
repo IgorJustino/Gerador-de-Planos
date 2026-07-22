@@ -38,12 +38,14 @@ legado do Supabase foi removido da arquitetura ativa.
 
 O frontend moderno não armazena JWT, não usa Supabase e renderiza a resposta da
 IA com `textContent` e elementos DOM. A interface permite editar planos,
-salvar novas versões manuais, consultar snapshots anteriores, alterar status e
-excluir planos com confirmação. Ainda não há RAG, feedback, métricas avançadas
-ou exportação.
+salvar novas versões manuais, consultar snapshots anteriores, alterar status,
+excluir planos com confirmação, filtrar o histórico, registrar feedback e ver
+um resumo básico de uso. Ainda não há RAG, embeddings, `pgvector` ou
+exportação.
 
 ## API
 
 Os endpoints estão documentados em [`docs/API.md`](docs/API.md). As operações
 de edição exigem `expectedVersion` e criam snapshots manuais sem sobrescrever
-o histórico anterior.
+o histórico anterior. Deploy e métricas estão documentados em
+[`docs/deployment.md`](docs/deployment.md) e [`docs/metrics.md`](docs/metrics.md).

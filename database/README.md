@@ -43,7 +43,8 @@ O Marco 2 criou a extensão `pgcrypto` e a tabela base `users`. A 3A adiciona
 `lesson_plans`, suas constraints, índices e triggers de `updated_at`. A 4A
 adiciona `lesson_plan_versions` e `lesson_plans.current_version`, mantendo um
 snapshot completo para cada versão e fazendo backfill da versão 1 para planos
-existentes. Feedback e métricas serão adicionados nos próximos marcos.
+existentes. A sprint de produto adiciona `lesson_plan_feedbacks`, com um
+feedback por usuário e plano.
 
 ## Versionamento de planos
 
@@ -56,6 +57,14 @@ A criação da versão inicial e a criação de versões posteriores ocorrem em
 transação. Para versões posteriores, o plano é bloqueado com `SELECT ... FOR
 UPDATE` antes do cálculo do próximo número. A foreign key usa `ON DELETE
 CASCADE`, portanto as versões são removidas junto com o plano.
+
+## Feedback
+
+`lesson_plan_feedbacks` registra avaliação de 1 a 5, utilidade, uso em aula e
+comentário opcional. A constraint `UNIQUE (lesson_plan_id, user_id)` mantém um
+feedback por usuário em cada plano; novo envio atualiza o registro existente.
+A foreign key usa `ON DELETE CASCADE`, portanto feedbacks são removidos junto
+com o plano ou usuário.
 
 O seed cria o usuário fictício `demo@example.com` com a senha `demo123` para
 uso local. Essa credencial não deve ser usada em produção.

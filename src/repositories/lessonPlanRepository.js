@@ -29,16 +29,53 @@ async function findLessonPlansByUser(db, userId, pagination = {}) {
     pagination.page,
     pagination.limit
   );
+  const filters = [];
+  const values = [userId];
+
+  function addFilter(sql, value) {
+    values.push(value);
+    filters.push(sql.replace('?', `$${values.length}`));
+  }
+
+  if (pagination.status) {
+    addFilter('status = ?', pagination.status);
+  }
+
+  if (pagination.nivelEnsino) {
+    addFilter('nivel_ensino ILIKE ?', `%${pagination.nivelEnsino}%`);
+  }
+
+  if (pagination.codigoBNCC) {
+    addFilter('codigo_bncc ILIKE ?', `%${pagination.codigoBNCC}%`);
+  }
+
+  if (pagination.tema) {
+    addFilter('tema ILIKE ?', `%${pagination.tema}%`);
+  }
+
+  const sortMap = {
+    created_desc: 'created_at DESC',
+    created_asc: 'created_at ASC',
+    updated_desc: 'updated_at DESC',
+    updated_asc: 'updated_at ASC',
+  };
+  const orderBy = sortMap[pagination.sort] || sortMap.created_desc;
+  values.push(limit, offset);
+  const limitIndex = values.length - 1;
+  const offsetIndex = values.length;
+  const filterSql = filters.length > 0 ? `AND ${filters.join(' AND ')}` : '';
+
   const result = await db.query(
     `
       SELECT *
         , COUNT(*) OVER() AS total_count
       FROM lesson_plans
       WHERE user_id = $1
-      ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3
+        ${filterSql}
+      ORDER BY ${orderBy}
+      LIMIT $${limitIndex} OFFSET $${offsetIndex}
     `,
-    [userId, limit, offset]
+    values
   );
 
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count || 0) : 0;

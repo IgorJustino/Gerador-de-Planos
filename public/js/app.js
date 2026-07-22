@@ -6,6 +6,7 @@
         viewedVersion: null,
         pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
         versionsPagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        filters: { tema: '', status: '', nivelEnsino: '', codigoBNCC: '', sort: 'created_desc' },
         loading: {
             session: false,
             generation: false,
@@ -15,6 +16,8 @@
             versions: false,
             status: false,
             delete: false,
+            feedback: false,
+            metrics: false,
         },
         redirecting: false,
     };
@@ -30,6 +33,8 @@
     const historyList = document.getElementById('listaPlanos');
     const historyButton = document.getElementById('btnMostrarPlanos');
     const pagination = document.getElementById('pagination');
+    const metricsCard = document.getElementById('metricsCard');
+    const metricsSummary = document.getElementById('metricsSummary');
     const planManagement = document.getElementById('planManagement');
     const planVersionInfo = document.getElementById('planVersionInfo');
     const planActionMessage = document.getElementById('planActionMessage');
@@ -47,6 +52,16 @@
     const versionsList = document.getElementById('versionsList');
     const versionsPagination = document.getElementById('versionsPagination');
     const closeVersionsButton = document.getElementById('btnFecharVersoes');
+    const feedbackPanel = document.getElementById('feedbackPanel');
+    const feedbackForm = document.getElementById('formFeedback');
+    const feedbackRating = document.getElementById('feedbackRating');
+    const feedbackUseful = document.getElementById('feedbackUseful');
+    const feedbackUsedInClass = document.getElementById('feedbackUsedInClass');
+    const feedbackComment = document.getElementById('feedbackComment');
+    const saveFeedbackButton = document.getElementById('btnSalvarFeedback');
+    const feedbackMessage = document.getElementById('feedbackMessage');
+    const filtersForm = document.getElementById('formFiltros');
+    const clearFiltersButton = document.getElementById('btnLimparFiltros');
 
     function redirectToLogin() {
         if (state.redirecting || window.location.pathname.endsWith('/login.html')) return;
@@ -90,6 +105,76 @@
 
     function clearActionMessage() {
         planActionMessage.replaceChildren();
+    }
+
+    function showFeedbackMessage(message, type = 'info') {
+        AppUi.showStatus(feedbackMessage, message, type);
+    }
+
+    function buildQuery(params) {
+        const search = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                search.set(key, value);
+            }
+        });
+        return search.toString();
+    }
+
+    function readFilters() {
+        return {
+            tema: document.getElementById('filterTema').value.trim(),
+            status: document.getElementById('filterStatus').value,
+            nivelEnsino: document.getElementById('filterNivel').value.trim(),
+            codigoBNCC: document.getElementById('filterBNCC').value.trim().toUpperCase(),
+            sort: document.getElementById('filterSort').value || 'created_desc',
+        };
+    }
+
+    function resetFilters() {
+        document.getElementById('filterTema').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterNivel').value = '';
+        document.getElementById('filterBNCC').value = '';
+        document.getElementById('filterSort').value = 'created_desc';
+        state.filters = readFilters();
+    }
+
+    function renderMetric(label, value) {
+        const item = element('div', 'metric-item');
+        item.append(
+            element('p', 'metric-label', label),
+            element('p', 'metric-value', value === null || value === undefined ? '-' : value)
+        );
+        return item;
+    }
+
+    function renderMetrics(metrics) {
+        metricsSummary.replaceChildren(
+            renderMetric('Planos', metrics.totalPlanos || 0),
+            renderMetric('Aprovados', metrics.planosPorStatus?.approved || 0),
+            renderMetric('Versões', metrics.totalVersoes || 0),
+            renderMetric('Nota média', metrics.notaMedia ?? '-'),
+            renderMetric('Úteis', metrics.percentualUteis === null ? '-' : `${metrics.percentualUteis}%`),
+            renderMetric('Últimos 7 dias', metrics.planosUltimos7Dias || 0)
+        );
+        metricsCard.hidden = false;
+    }
+
+    async function loadMetrics() {
+        if (state.loading.metrics) return;
+        state.loading.metrics = true;
+        try {
+            const payload = await ApiClient.request('/api/metrics/summary');
+            renderMetrics(payload?.metrics || {});
+        } catch (error) {
+            if (error.status !== 401) {
+                metricsCard.hidden = false;
+                AppUi.showStatus(metricsSummary, errorMessage(error, 'Não foi possível carregar o resumo.'), 'error');
+            }
+        } finally {
+            state.loading.metrics = false;
+        }
     }
 
     function validateForm() {
@@ -142,6 +227,7 @@
         const plan = activePlan();
         if (!plan) {
             setManagementVisible(false);
+            feedbackPanel.hidden = true;
             editPanel.hidden = true;
             versionsPanel.hidden = true;
             return;
@@ -153,6 +239,7 @@
             : `Versão atual: ${normalized.versaoAtual || 1}.`;
 
         setManagementVisible(true);
+        feedbackPanel.hidden = false;
         planVersionInfo.textContent = versionLabel;
         statusSelect.value = normalized.status || 'draft';
     }
@@ -162,6 +249,7 @@
         state.viewedVersion = viewedVersion;
         LessonPlanRenderer.renderLessonPlan(result, plan);
         renderPlanManagement();
+        loadFeedback();
         scrollToResult();
     }
 
@@ -211,7 +299,12 @@
         historyCard.style.display = 'block';
         AppUi.showLoading(historyList, 'Carregando seus planos...');
         try {
-            const payload = await ApiClient.request(`/api/planos?page=${page}&limit=${state.pagination.limit}`);
+            const query = buildQuery({
+                page,
+                limit: state.pagination.limit,
+                ...state.filters,
+            });
+            const payload = await ApiClient.request(`/api/planos?${query}`);
             state.plans = payload?.items || [];
             state.pagination = payload?.pagination || { page, limit: 10, total: 0, totalPages: 0 };
             LessonPlanRenderer.renderPlanList(historyList, state.plans, openPlan);
@@ -313,6 +406,7 @@
             renderSelectedPlan(payload.plano);
             showActionMessage('Nova versão salva com sucesso.', 'success');
             await loadHistory(state.pagination.page);
+            await loadMetrics();
             if (!versionsPanel.hidden) await loadVersions(state.versionsPagination.page);
         } catch (error) {
             if (error.status !== 401) showActionMessage(errorMessage(error, 'Não foi possível salvar a edição.'), 'error');
@@ -336,6 +430,7 @@
             renderSelectedPlan(payload.plano);
             showActionMessage('Status atualizado.', 'success');
             await loadHistory(state.pagination.page);
+            await loadMetrics();
         } catch (error) {
             if (error.status !== 401) {
                 statusSelect.value = LessonPlanRenderer.normalizePlan(plan).status || 'draft';
@@ -456,11 +551,70 @@
             AppUi.showStatus(result, 'Plano excluído.', 'success');
             result.style.display = 'block';
             await loadHistory(1);
+            await loadMetrics();
         } catch (error) {
             if (error.status !== 401) showActionMessage(errorMessage(error, 'Não foi possível excluir o plano.'), 'error');
         } finally {
             state.loading.delete = false;
             AppUi.setBusy(deleteButton, false, 'Excluindo...', 'Excluir');
+        }
+    }
+
+    function fillFeedbackForm(feedback) {
+        feedbackRating.value = feedback?.rating || '';
+        feedbackUseful.checked = Boolean(feedback?.useful);
+        feedbackUsedInClass.checked = Boolean(feedback?.usedInClass);
+        feedbackComment.value = feedback?.comment || '';
+        feedbackMessage.replaceChildren();
+    }
+
+    async function loadFeedback() {
+        const plan = activePlan();
+        if (!plan || state.loading.feedback) return;
+        state.loading.feedback = true;
+        try {
+            const payload = await ApiClient.request(`/api/planos/${encodeURIComponent(plan.id)}/feedback`);
+            fillFeedbackForm(payload?.feedback || null);
+        } catch (error) {
+            if (error.status !== 401) {
+                fillFeedbackForm(null);
+                showFeedbackMessage(errorMessage(error, 'Não foi possível carregar a avaliação.'), 'error');
+            }
+        } finally {
+            state.loading.feedback = false;
+        }
+    }
+
+    async function saveFeedback(event) {
+        event.preventDefault();
+        const plan = activePlan();
+        if (!plan || state.loading.feedback) return;
+
+        if (!feedbackRating.value) {
+            showFeedbackMessage('Selecione uma nota de 1 a 5.', 'error');
+            return;
+        }
+
+        state.loading.feedback = true;
+        AppUi.setBusy(saveFeedbackButton, true, 'Salvando...', 'Salvar avaliação');
+        try {
+            const payload = await ApiClient.request(`/api/planos/${encodeURIComponent(plan.id)}/feedback`, {
+                method: 'POST',
+                body: {
+                    rating: Number(feedbackRating.value),
+                    useful: feedbackUseful.checked,
+                    usedInClass: feedbackUsedInClass.checked,
+                    comment: feedbackComment.value.trim() || null,
+                },
+            });
+            fillFeedbackForm(payload?.feedback || null);
+            showFeedbackMessage('Avaliação salva.', 'success');
+            await loadMetrics();
+        } catch (error) {
+            if (error.status !== 401) showFeedbackMessage(errorMessage(error, 'Não foi possível salvar a avaliação.'), 'error');
+        } finally {
+            state.loading.feedback = false;
+            AppUi.setBusy(saveFeedbackButton, false, 'Salvando...', 'Salvar avaliação');
         }
     }
 
@@ -483,6 +637,7 @@
             renderSelectedPlan(plan);
             showActionMessage('Plano gerado e salvo com sucesso.', 'success');
             await loadHistory(1);
+            await loadMetrics();
         } catch (error) {
             if (error.status !== 401) showError(errorMessage(error, 'Não foi possível gerar o plano.'));
         } finally {
@@ -511,6 +666,7 @@
             userEmail.textContent = state.user.email;
             historyCard.style.display = 'block';
             historyButton.textContent = 'Ocultar Planos Anteriores';
+            await loadMetrics();
             await loadHistory(1);
         } catch (_error) {
             redirectToLogin();
@@ -535,6 +691,16 @@
     versionsButton.addEventListener('click', () => loadVersions(1));
     closeVersionsButton.addEventListener('click', () => { versionsPanel.hidden = true; });
     deleteButton.addEventListener('click', deleteSelectedPlan);
+    feedbackForm.addEventListener('submit', saveFeedback);
+    filtersForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        state.filters = readFilters();
+        loadHistory(1);
+    });
+    clearFiltersButton.addEventListener('click', () => {
+        resetFilters();
+        loadHistory(1);
+    });
     historyButton.addEventListener('click', () => {
         const visible = historyCard.style.display !== 'none';
         historyCard.style.display = visible ? 'none' : 'block';
@@ -547,6 +713,9 @@
         event.target.value = event.target.value.toUpperCase();
     });
     document.getElementById('editCodigoBNCC').addEventListener('input', (event) => {
+        event.target.value = event.target.value.toUpperCase();
+    });
+    document.getElementById('filterBNCC').addEventListener('input', (event) => {
         event.target.value = event.target.value.toUpperCase();
     });
     document.addEventListener('DOMContentLoaded', init);

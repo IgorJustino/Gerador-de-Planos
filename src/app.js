@@ -7,10 +7,14 @@ const { getEnv } = require('./config/env');
 const { createPool } = require('./config/database');
 const createSystemRoutes = require('./routes/systemRoutes');
 const createAuthRoutes = require('./routes/authRoutes');
+const createFeedbackRoutes = require('./routes/feedbackRoutes');
 const createLessonPlanRoutes = require('./routes/lessonPlanRoutes');
+const createMetricsRoutes = require('./routes/metricsRoutes');
 const { createAuthService } = require('./services/authService');
+const { createFeedbackService } = require('./services/feedbackService');
 const { createGeminiService } = require('./services/structuredGeminiService');
 const { createLessonPlanService } = require('./services/lessonPlanService');
+const { createMetricsService } = require('./services/metricsService');
 const errorHandler = require('./middleware/errorHandler');
 const notFoundHandler = require('./middleware/notFoundHandler');
 
@@ -23,6 +27,8 @@ function createApp(options = {}) {
     db: pool,
     geminiService,
   });
+  const feedbackService = options.feedbackService || createFeedbackService({ db: pool });
+  const metricsService = options.metricsService || createMetricsService({ db: pool });
   const app = express();
 
   app.disable('x-powered-by');
@@ -59,6 +65,16 @@ function createApp(options = {}) {
 
   app.use(createSystemRoutes({ pool }));
   app.use('/api/auth', createAuthRoutes({ authService, env }));
+  app.use('/api/metrics', createMetricsRoutes({
+    authService,
+    env,
+    metricsService,
+  }));
+  app.use('/api/planos/:id/feedback', createFeedbackRoutes({
+    authService,
+    env,
+    feedbackService,
+  }));
   app.use('/api/planos', createLessonPlanRoutes({
     authService,
     env,

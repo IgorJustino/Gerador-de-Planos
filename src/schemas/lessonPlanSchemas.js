@@ -20,6 +20,13 @@ const lessonPlanListQuerySchema = z
   .object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
+    status: z.enum(['draft', 'reviewed', 'approved', 'archived']).optional(),
+    nivelEnsino: z.string().trim().min(1).max(100).optional(),
+    codigoBNCC: z.string().trim().max(50).optional(),
+    tema: z.string().trim().min(1).max(200).optional(),
+    sort: z
+      .enum(['created_desc', 'created_asc', 'updated_desc', 'updated_asc'])
+      .default('created_desc'),
   })
   .strict();
 

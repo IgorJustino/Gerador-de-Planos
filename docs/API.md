@@ -21,6 +21,19 @@ GET /api/planos?page=1&limit=20
 GET /api/planos/:id
 ```
 
+Filtros aceitos na listagem:
+
+```text
+status=draft|reviewed|approved|archived
+nivelEnsino=texto
+codigoBNCC=texto
+tema=texto
+sort=created_desc|created_asc|updated_desc|updated_asc
+```
+
+Todos os filtros são combinados com `user_id` da sessão. Busca por `tema`,
+`nivelEnsino` e `codigoBNCC` usa correspondência parcial parametrizada.
+
 ### Editar plano
 
 ```text
@@ -95,6 +108,47 @@ DELETE /api/planos/:id
 
 Retorna `204 No Content`. As versões são removidas pelo `ON DELETE CASCADE`.
 Plano inexistente ou pertencente a outro usuário retorna `404`.
+
+## Feedback
+
+```text
+GET  /api/planos/:id/feedback
+POST /api/planos/:id/feedback
+```
+
+Body:
+
+```json
+{
+  "rating": 5,
+  "useful": true,
+  "usedInClass": false,
+  "comment": "Plano bem estruturado."
+}
+```
+
+Cada usuário pode manter um feedback por plano próprio. Novo envio atualiza o
+registro existente. Feedback não cria versão e não altera status.
+
+## Métricas
+
+```text
+GET /api/metrics/summary
+```
+
+Retorna somente dados do usuário autenticado:
+
+```text
+totalPlanos
+planosPorStatus
+totalVersoes
+mediaVersoesPorPlano
+totalFeedbacks
+notaMedia
+percentualUteis
+planosUltimos7Dias
+ultimosPlanos
+```
 
 ## Erros comuns
 
