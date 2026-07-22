@@ -16,10 +16,16 @@ function createBnccController({ bnccService }) {
     res.status(200).json(result);
   });
 
+  const recommend = asyncHandler(async (req, res) => {
+    const result = await bnccService.recommendSkills(req.body);
+    res.status(200).json(result);
+  });
+
   return {
     search,
     findByCode,
     semanticSearch,
+    recommend,
   };
 }
 

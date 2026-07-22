@@ -1,4 +1,4 @@
-const PROMPT_VERSION = 'lesson-plan-v1';
+const PROMPT_VERSION = 'lesson-plan-v7';
 
 module.exports = {
   PROMPT_VERSION,

@@ -1,7 +1,9 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
 const {
+  lessonPlanGenerationSchema,
   lessonPlanUpdateSchema,
   lessonPlanStatusSchema,
 } = require('../../src/schemas/lessonPlanSchemas');
@@ -19,21 +21,7 @@ const currentPlan = {
   codigo_bncc: 'EF05CI01',
   status: 'draft',
   current_version: 1,
-  content: {
-    titulo: 'Plano atual',
-    resumo: 'Resumo suficientemente longo para o schema do plano.',
-    objetivos: ['Compreender o conteúdo'],
-    metodologia: ['Atividade guiada'],
-    recursos: ['Quadro'],
-    etapas: [
-      { titulo: 'Introdução', descricao: 'Apresentação.', duracaoMinutos: 10 },
-      { titulo: 'Desenvolvimento', descricao: 'Atividade.', duracaoMinutos: 30 },
-      { titulo: 'Fechamento', descricao: 'Síntese.', duracaoMinutos: 10 },
-    ],
-    avaliacao: ['Participação'],
-    adaptacoes: [],
-    habilidadesBNCC: [],
-  },
+  content: createValidLessonPlanContent({ titulo: 'Plano atual' }),
 };
 
 test('schema de edição exige alteração e permite remover código BNCC', () => {
@@ -52,6 +40,26 @@ test('schema de edição exige alteração e permite remover código BNCC', () =
     status: 'approved',
   });
   assert.equal(withForbiddenField.success, false);
+});
+
+test('schemas aceitam códigos BNCC do Ensino Fundamental e Médio', () => {
+  assert.equal(
+    lessonPlanGenerationSchema.safeParse({
+      tema: 'Alexandre e o mundo helenístico',
+      nivelEnsino: 'Ensino Médio',
+      duracaoMinutos: 50,
+      codigoBNCC: 'EM13CHS101',
+    }).success,
+    true
+  );
+
+  assert.equal(
+    lessonPlanUpdateSchema.safeParse({
+      codigoBNCC: 'EF05CI01',
+      expectedVersion: 1,
+    }).success,
+    true
+  );
 });
 
 test('schema de status rejeita campos extras e status desconhecido', () => {

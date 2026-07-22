@@ -52,10 +52,13 @@ test('lessonPlanRepository mapeia camelCase para snake_case', async () => {
   assert.equal(plan.id, 'plan-1');
   const planInsert = db.calls.find((call) => call.text.includes('INSERT INTO lesson_plans'));
   assert.deepEqual(planInsert.values, [
-    'user-1',
-    'Fotossíntese',
-    '5º ano',
-    50,
+      'user-1',
+      'Fotossíntese',
+      '5º ano',
+      '5º ano',
+      null,
+      null,
+      50,
     'EF05CI01',
     'draft',
     { titulo: 'Plano' },

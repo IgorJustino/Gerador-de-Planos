@@ -1,16 +1,22 @@
 const { z } = require('zod');
 const { geminiLessonPlanSchema } = require('./geminiSchemas');
 
+const bnccCodePattern = /^[A-Za-z]{2}\d{2}[A-Za-z]{2,3}\d{2,3}$/;
+
 const lessonPlanGenerationSchema = z
   .object({
     tema: z.string().trim().min(3).max(200),
     nivelEnsino: z.string().trim().min(2).max(100),
+    etapaEnsino: z.string().trim().min(2).max(100).optional(),
+    serieAno: z.string().trim().min(1).max(50).optional(),
+    disciplina: z.string().trim().min(2).max(120).optional(),
     duracaoMinutos: z.coerce.number().int().min(10).max(300),
+    quantidadeAulas: z.coerce.number().int().min(1).max(20).default(1),
     codigoBNCC: z
       .string()
       .trim()
       .max(50)
-      .regex(/^[A-Za-z]{2}\d{2}[A-Za-z]{2}\d{2}$/, 'Código BNCC inválido')
+      .regex(bnccCodePattern, 'Código BNCC inválido')
       .optional(),
     bnccSkillId: z.string().uuid('Habilidade BNCC inválida').optional(),
     contextoAdicional: z.string().trim().max(1000).optional(),
@@ -44,13 +50,16 @@ const editableBnccCodeSchema = z
   .string()
   .trim()
   .max(50)
-  .regex(/^[A-Za-z]{2}\d{2}[A-Za-z]{2}\d{2}$/, 'Código BNCC inválido');
+  .regex(bnccCodePattern, 'Código BNCC inválido');
 
 const lessonPlanUpdateSchema = z
   .object({
     tema: z.string().trim().min(3).max(200).optional(),
     nivelEnsino: z.string().trim().min(2).max(100).optional(),
-    duracaoMinutos: z.coerce.number().int().min(10).max(300).optional(),
+    etapaEnsino: z.string().trim().min(2).max(100).optional(),
+    serieAno: z.string().trim().min(1).max(50).optional(),
+    disciplina: z.string().trim().min(2).max(120).optional(),
+    duracaoMinutos: z.coerce.number().int().min(10).max(6000).optional(),
     codigoBNCC: z.union([editableBnccCodeSchema, z.null()]).optional(),
     conteudo: geminiLessonPlanSchema.optional(),
     expectedVersion: z.coerce.number().int().min(1, 'Versão esperada inválida'),

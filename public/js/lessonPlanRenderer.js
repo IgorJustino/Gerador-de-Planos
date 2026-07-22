@@ -26,6 +26,23 @@
         );
     }
 
+    function extractLessonNumber(step) {
+        if (Number.isInteger(step.aulaNumero)) return step.aulaNumero;
+        const match = `${step.titulo || ''} ${step.descricao || ''}`.match(/aula\s+(\d{1,2})/i);
+        return match ? Number(match[1]) : null;
+    }
+
+    function inferLessonLoad(plan) {
+        const steps = plan.conteudo?.etapas || [];
+        const lessonNumbers = [...new Set(steps.map(extractLessonNumber).filter(Boolean))];
+        const total = Number(plan.duracaoMinutos || 0);
+        if (lessonNumbers.length <= 1 || !total || total % lessonNumbers.length !== 0) return null;
+        return {
+            quantidade: lessonNumbers.length,
+            duracaoPorAula: total / lessonNumbers.length,
+        };
+    }
+
     function normalizePlan(plan) {
         return {
             ...plan,
@@ -39,6 +56,7 @@
             criadoEm: plan.criadoEm || plan.created_at,
             atualizadoEm: plan.atualizadoEm || plan.updated_at,
             habilidadesBNCCUsadas: plan.habilidadesBNCCUsadas || [],
+            qualidade: plan.qualidade || null,
         };
     }
 
@@ -90,9 +108,50 @@
                 element('p', null, step.descricao),
                 element('span', 'meta-tag', `${step.duracaoMinutos} min`)
             );
+            if (step.momento) {
+                item.append(element('p', null, `Momento: ${step.momento}`));
+            }
+            if (Array.isArray(step.momentos) && step.momentos.length > 0) {
+                const moments = element('ol', 'lesson-list');
+                step.momentos.forEach((moment) => {
+                    const detail = [
+                        `${moment.tipo} - ${moment.duracaoMinutos} min`,
+                        moment.descricao,
+                        `Professor: ${moment.acaoProfessor}`,
+                        `Estudantes: ${moment.acaoEstudantes}`,
+                        `Material: ${moment.material}`,
+                        `Evidência: ${moment.evidenciaProduzida}`,
+                    ].filter(Boolean).join(' | ');
+                    moments.append(element('li', null, detail));
+                });
+                item.append(moments);
+            }
+            if (Array.isArray(step.objetivosRelacionados)) {
+                item.append(element(
+                    'p',
+                    null,
+                    `Objetivos: ${step.objetivosRelacionados.join(', ')}`
+                ));
+            }
+            if (step.produtoDoEstudante) {
+                item.append(element('p', null, `Produto: ${step.produtoDoEstudante}`));
+            }
             list.append(item);
         });
         parent.append(list);
+    }
+
+    function formatObjective(objective) {
+        if (!objective || typeof objective !== 'object') return objective;
+        return `${objective.id}: ${objective.descricao} | Evidência: ${objective.evidencia} | Critério: ${objective.criterioSucesso}`;
+    }
+
+    function formatAssessment(assessment) {
+        if (!assessment || typeof assessment !== 'object') return assessment;
+        const objectives = Array.isArray(assessment.objetivosRelacionados)
+            ? assessment.objetivosRelacionados.join(', ')
+            : '';
+        return `${assessment.instrumento} | Objetivos: ${objectives} | Critério: ${assessment.criterioSucesso}`;
     }
 
     function appendMeta(parent, plan) {
@@ -103,10 +162,86 @@
             ['📋', plan.codigoBNCC],
             ['📌', plan.status],
             ['#', `v${plan.versaoAtual}`],
+            ['Qualidade', plan.qualidade?.disponivel ? `${plan.qualidade.pontuacao}/100` : ''],
+            ['BNCC', plan.alinhamentoBNCC?.status === 'confirmado' ? 'confirmado' : 'não selecionado'],
         ].forEach(([icon, value]) => {
             if (value) meta.append(element('span', 'meta-tag', `${icon} ${value}`));
         });
+        const lessonLoad = inferLessonLoad(plan);
+        if (lessonLoad) {
+            meta.append(element(
+                'span',
+                'meta-tag',
+                `🗓️ ${lessonLoad.quantidade} aulas × ${lessonLoad.duracaoPorAula} min`
+            ));
+        }
         parent.append(meta);
+    }
+
+    function appendQualitySummary(parent, quality) {
+        if (!quality?.disponivel) return;
+        const section = element('section', 'secao quality-summary');
+        const heading = element('div', 'quality-heading');
+        const title = element('h2', null, 'Qualidade pedagógica');
+        const score = element(
+            'strong',
+            quality.aprovado ? 'quality-score quality-score-pass' : 'quality-score quality-score-review',
+            `${quality.pontuacao}/100`
+        );
+        heading.append(title, score);
+
+        const progress = element('progress', 'quality-progress');
+        progress.max = 100;
+        progress.value = quality.pontuacao;
+        progress.setAttribute('aria-label', `Qualidade pedagógica: ${quality.pontuacao} de 100`);
+
+        const criteria = element('ul', 'quality-criteria');
+        quality.criterios.forEach((criterion) => {
+            const item = element(
+                'li',
+                criterion.atendido ? 'quality-criterion-pass' : 'quality-criterion-review'
+            );
+            item.append(
+                element('span', null, criterion.titulo),
+                element('strong', null, `${criterion.pontos}/${criterion.maximo}`)
+            );
+            if (!criterion.atendido) item.title = criterion.detalhe;
+            criteria.append(item);
+        });
+
+        section.append(
+            heading,
+            progress,
+            element(
+                'p',
+                'quality-status',
+                quality.aprovado
+                    ? `Atingiu o patamar mínimo de qualidade de ${quality.limiteAprovacao} pontos.`
+                    : `Revisão recomendada: abaixo do patamar mínimo de ${quality.limiteAprovacao} pontos.`
+            ),
+            criteria
+        );
+        parent.append(section);
+    }
+
+    function mergeBnccSkills(contentSkills, tracedSkills) {
+        const skillsByCode = new Map();
+        (contentSkills || []).forEach((skill) => {
+            skillsByCode.set(String(skill.codigo).toUpperCase(), {
+                code: skill.codigo,
+                description: skill.descricao,
+                origin: 'informada no plano',
+            });
+        });
+        (tracedSkills || []).forEach((skill) => {
+            const code = String(skill.code).toUpperCase();
+            skillsByCode.set(code, {
+                code: skill.code,
+                description: skill.description,
+                origin: skill.relationSource === 'selected' ? 'selecionada' : 'recuperada',
+            });
+        });
+        return [...skillsByCode.values()];
     }
 
     function renderLessonPlan(container, originalPlan) {
@@ -119,8 +254,10 @@
         appendMeta(heading, plan);
         heading.append(element('p', 'plano-data', `Criado em: ${formatDate(plan.criadoEm)}`));
         card.append(heading);
+        appendQualitySummary(card, plan.qualidade);
 
-        appendSection(card, '🎯', 'Objetivos', content.objetivos);
+        const objectives = (content.objetivos || []).map(formatObjective);
+        appendSection(card, '🎯', 'Objetivos', objectives);
         appendSection(card, '🧭', 'Metodologia', content.metodologia);
         appendSection(card, '🧰', 'Recursos', content.recursos);
 
@@ -130,17 +267,15 @@
         stepsSection.append(element('p', 'duration-summary', `Duração: ${sumLessonDurations(content)} de ${plan.duracaoMinutos} minutos`));
         card.append(stepsSection);
 
-        appendSection(card, '✅', 'Avaliação', content.avaliacao);
+        const assessments = content.avaliacoes
+            ? content.avaliacoes.map(formatAssessment)
+            : content.avaliacao;
+        appendSection(card, '✅', 'Avaliação', assessments);
         appendSection(card, '♿', 'Adaptações', content.adaptacoes, 'Nenhuma adaptação informada.');
 
-        const bncc = (content.habilidadesBNCC || []).map((skill) => `${skill.codigo}: ${skill.descricao}`);
-        appendSection(card, '📚', 'Habilidades BNCC informadas', bncc, 'Nenhuma habilidade informada.');
-
-        const traced = (plan.habilidadesBNCCUsadas || []).map((skill) => {
-            const origin = skill.relationSource === 'selected' ? 'selecionada' : 'recuperada';
-            return `${skill.code}: ${skill.description} (${origin})`;
-        });
-        appendSection(card, '🔎', 'Contexto BNCC recuperado', traced, 'Nenhum contexto BNCC registrado.');
+        const bncc = mergeBnccSkills(content.habilidadesBNCC, plan.habilidadesBNCCUsadas)
+            .map((skill) => `${skill.code}: ${skill.description} (${skill.origin})`);
+        appendSection(card, '📚', 'Habilidades BNCC', bncc, 'Nenhuma habilidade informada.');
 
         container.style.display = 'block';
         container.replaceChildren(card);

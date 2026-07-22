@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
 const { getEnv } = require('../../src/config/env');
 const { createPool } = require('../../src/config/database');
 const { createApp } = require('../../src/app');
@@ -15,20 +16,7 @@ function extractCookie(response) {
   return setCookie.split(';')[0];
 }
 
-const content = {
-  titulo: 'Plano de produto',
-  resumo: 'Resumo suficientemente longo para validar métricas e feedback.',
-  objetivos: ['Compreender o tema'],
-  metodologia: ['Atividade orientada'],
-  recursos: ['Quadro'],
-  etapas: [
-    { titulo: 'Abertura', descricao: 'Introdução.', duracaoMinutos: 10 },
-    { titulo: 'Prática', descricao: 'Atividade.', duracaoMinutos: 40 },
-  ],
-  avaliacao: ['Participação'],
-  adaptacoes: [],
-  habilidadesBNCC: [],
-};
+const content = createValidLessonPlanContent({ titulo: 'Plano de produto' });
 
 test('filtros, feedback e métricas usam dados reais e isolamento por usuário', {
   skip: !testDatabaseUrl,

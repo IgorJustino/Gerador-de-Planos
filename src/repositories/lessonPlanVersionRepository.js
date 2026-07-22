@@ -29,7 +29,7 @@ function assertSource(source) {
 
 function mapVersion(row) {
   if (!row) return null;
-  return {
+  const mapped = {
     id: row.id,
     lessonPlanId: row.lesson_plan_id,
     versionNumber: row.version_number,
@@ -41,12 +41,19 @@ function mapVersion(row) {
     content: row.content,
     criadoEm: row.created_at,
   };
+  if (row.etapa_ensino !== undefined) mapped.etapaEnsino = row.etapa_ensino;
+  if (row.serie_ano !== undefined) mapped.serieAno = row.serie_ano;
+  if (row.disciplina !== undefined) mapped.disciplina = row.disciplina;
+  return mapped;
 }
 
 async function createLessonPlanWithInitialVersion(db, {
   userId,
   tema,
   nivelEnsino,
+  etapaEnsino = nivelEnsino,
+  serieAno = null,
+  disciplina = null,
   duracaoMinutos,
   codigoBNCC = null,
   status = 'draft',
@@ -61,6 +68,9 @@ async function createLessonPlanWithInitialVersion(db, {
           user_id,
           tema,
           nivel_ensino,
+          etapa_ensino,
+          serie_ano,
+          disciplina,
           duracao_minutos,
           codigo_bncc,
           status,
@@ -69,13 +79,16 @@ async function createLessonPlanWithInitialVersion(db, {
           prompt_version,
           current_version
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 1)
         RETURNING *
       `,
       [
         userId,
         tema,
         nivelEnsino,
+        etapaEnsino,
+        serieAno,
+        disciplina,
         duracaoMinutos,
         codigoBNCC,
         status,
@@ -94,13 +107,16 @@ async function createLessonPlanWithInitialVersion(db, {
           source,
           tema,
           nivel_ensino,
+          etapa_ensino,
+          serie_ano,
+          disciplina,
           duracao_minutos,
           codigo_bncc,
           content
         )
-        VALUES ($1, 1, 'ai', $2, $3, $4, $5, $6)
+        VALUES ($1, 1, 'ai', $2, $3, $4, $5, $6, $7, $8, $9)
       `,
-      [plan.id, tema, nivelEnsino, duracaoMinutos, codigoBNCC, content]
+      [plan.id, tema, nivelEnsino, etapaEnsino, serieAno, disciplina, duracaoMinutos, codigoBNCC, content]
     );
 
     return plan;
@@ -116,6 +132,9 @@ async function createVersionAndUpdateCurrentPlan(db, {
   expectedVersion,
   tema,
   nivelEnsino,
+  etapaEnsino = nivelEnsino,
+  serieAno = null,
+  disciplina = null,
   duracaoMinutos,
   codigoBNCC = null,
   content,
@@ -155,14 +174,17 @@ async function createVersionAndUpdateCurrentPlan(db, {
           source,
           tema,
           nivel_ensino,
+          etapa_ensino,
+          serie_ano,
+          disciplina,
           duracao_minutos,
           codigo_bncc,
           content
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `,
-      [planId, nextVersion, source, tema, nivelEnsino, duracaoMinutos, codigoBNCC, content]
+      [planId, nextVersion, source, tema, nivelEnsino, etapaEnsino, serieAno, disciplina, duracaoMinutos, codigoBNCC, content]
     );
 
     const updatedPlanResult = await client.query(
@@ -170,15 +192,18 @@ async function createVersionAndUpdateCurrentPlan(db, {
         UPDATE lesson_plans
         SET tema = $1,
             nivel_ensino = $2,
-            duracao_minutos = $3,
-            codigo_bncc = $4,
-            content = $5,
-            current_version = $6,
+            etapa_ensino = $3,
+            serie_ano = $4,
+            disciplina = $5,
+            duracao_minutos = $6,
+            codigo_bncc = $7,
+            content = $8,
+            current_version = $9,
             updated_at = NOW()
-        WHERE id = $7 AND user_id = $8
+        WHERE id = $10 AND user_id = $11
         RETURNING *
       `,
-      [tema, nivelEnsino, duracaoMinutos, codigoBNCC, content, nextVersion, planId, userId]
+      [tema, nivelEnsino, etapaEnsino, serieAno, disciplina, duracaoMinutos, codigoBNCC, content, nextVersion, planId, userId]
     );
 
     return {

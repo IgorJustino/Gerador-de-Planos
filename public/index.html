@@ -40,42 +40,107 @@
                         id="tema" 
                         name="tema" 
                         required 
+                        maxlength="200"
                         placeholder="Ex: Fotossíntese"
                         autocomplete="off"
                     >
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="nivelEnsino">Nível de Ensino *</label>
-                    <select id="nivelEnsino" name="nivelEnsino" required>
-                        <option value="">Selecione...</option>
-                        <option value="Educação Infantil">Educação Infantil</option>
-                        <option value="Ensino Fundamental I">Ensino Fundamental I</option>
-                        <option value="Ensino Fundamental II">Ensino Fundamental II</option>
-                        <option value="Ensino Médio">Ensino Médio</option>
-                    </select>
+                    <label for="contextoAdicional">Contexto adicional (opcional)</label>
+                    <textarea
+                        id="contextoAdicional"
+                        name="contextoAdicional"
+                        maxlength="1000"
+                        placeholder="Adicione informações extras sobre a turma ou necessidades específicas..."
+                    ></textarea>
+                </div>
+
+                <div class="form-grid form-grid-three">
+                    <div class="form-group">
+                        <label for="nivelEnsino">Nível de Ensino *</label>
+                        <select id="nivelEnsino" name="nivelEnsino" required>
+                            <option value="">Selecione...</option>
+                            <option value="Educação Infantil">Educação Infantil</option>
+                            <option value="Ensino Fundamental I">Ensino Fundamental I</option>
+                            <option value="Ensino Fundamental II">Ensino Fundamental II</option>
+                            <option value="Ensino Médio">Ensino Médio</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="serieAno">Série/ano *</label>
+                        <select id="serieAno" name="serieAno" required>
+                            <option value="">Selecione o nível primeiro...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="disciplina">Disciplina *</label>
+                        <input
+                            type="text"
+                            id="disciplina"
+                            name="disciplina"
+                            required
+                            maxlength="120"
+                            placeholder="Ex: História"
+                            list="disciplinasSugeridas"
+                            autocomplete="off"
+                        >
+                        <datalist id="disciplinasSugeridas">
+                            <option value="Arte"></option>
+                            <option value="Biologia"></option>
+                            <option value="Ciências"></option>
+                            <option value="Educação Física"></option>
+                            <option value="Filosofia"></option>
+                            <option value="Física"></option>
+                            <option value="Geografia"></option>
+                            <option value="História"></option>
+                            <option value="Língua Inglesa"></option>
+                            <option value="Língua Portuguesa"></option>
+                            <option value="Matemática"></option>
+                            <option value="Química"></option>
+                            <option value="Sociologia"></option>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="duracao">Duração de cada aula (minutos) *</label>
+                        <input
+                            type="number"
+                            id="duracao"
+                            name="duracao"
+                            required
+                            min="10"
+                            max="300"
+                            placeholder="Ex: 50"
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label for="quantidadeAulas">Quantidade de aulas *</label>
+                        <input
+                            type="number"
+                            id="quantidadeAulas"
+                            name="quantidadeAulas"
+                            required
+                            min="1"
+                            max="20"
+                            value="1"
+                        >
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="duracao">Duração (minutos) *</label>
-                    <input 
-                        type="number" 
-                        id="duracao" 
-                        name="duracao" 
-                        required 
-                        min="10" 
-                        max="300" 
-                        placeholder="Ex: 50"
-                    >
-                </div>
-                
-                <div class="form-group">
+                    <div id="bnccRecomendacaoAviso" class="bncc-recommendation-notice" hidden>
+                        Sugestão automática. Confirme a habilidade antes de gerar o plano.
+                    </div>
+                    <div id="bnccRecomendacoes" class="bncc-results" aria-live="polite"></div>
                     <label for="codigoBNCC">Código BNCC (opcional)</label>
                     <input 
                         type="text" 
                         id="codigoBNCC" 
                         name="codigoBNCC" 
-                        placeholder="Ex: EF05CI05"
+                        placeholder="Ex: EM13CHS101"
                         autocomplete="off"
                     >
                 </div>
@@ -86,7 +151,7 @@
                         <input
                             type="text"
                             id="bnccBusca"
-                            placeholder="Ex: fotossíntese, Ciências, EF05CI01"
+                            placeholder="Ex: Alexandre, História, EM13CHS101"
                             autocomplete="off"
                         >
                         <button type="button" class="btn-acao btn-ver" id="btnBuscarBNCC">Buscar</button>
@@ -94,17 +159,6 @@
                     <div id="bnccSelecionada" class="selected-skill" hidden></div>
                     <div id="bnccResultados" class="bncc-results" aria-live="polite"></div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="contextoAdicional">Contexto adicional (opcional)</label>
-                    <textarea 
-                        id="contextoAdicional"
-                        name="contextoAdicional"
-                        maxlength="1000"
-                        placeholder="Adicione informações extras sobre a turma ou necessidades específicas..."
-                    ></textarea>
-                </div>
-                
                 <button type="submit" class="btn btn-primary">
                     Gerar Plano de Aula
                 </button>
@@ -225,7 +279,7 @@
                     <textarea id="editResumo" required minlength="10" maxlength="1500"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="editObjetivos">Objetivos, um por linha *</label>
+                    <label for="editObjetivos">Objetivos: ID | descrição | evidência | critério *</label>
                     <textarea id="editObjetivos" required></textarea>
                 </div>
                 <div class="form-group">
@@ -237,16 +291,16 @@
                     <textarea id="editRecursos"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="editEtapas">Etapas, uma por linha: título | duração | descrição *</label>
+                    <label for="editEtapas">Etapas: título | duração | IDs | produto | descrição *</label>
                     <textarea id="editEtapas" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="editAvaliacao">Avaliação, uma por linha *</label>
+                    <label for="editAvaliacao">Avaliações: instrumento | IDs | critério *</label>
                     <textarea id="editAvaliacao" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="editAdaptacoes">Adaptações, uma por linha</label>
-                    <textarea id="editAdaptacoes"></textarea>
+                    <label for="editAdaptacoes">Adaptações, uma por linha *</label>
+                    <textarea id="editAdaptacoes" required></textarea>
                 </div>
                 <div class="form-group">
                     <label for="editHabilidadesBNCC">Habilidades BNCC: código | descrição</label>
@@ -329,7 +383,7 @@
         <!-- Footer -->
         <footer>
             <p>Gerador de Planos de Aula com IA</p>
-            <p class="model-info">Powered by Google Gemini 2.5 Flash</p>
+            <p class="model-info">Powered by Google Gemini</p>
         </footer>
     </div>
 

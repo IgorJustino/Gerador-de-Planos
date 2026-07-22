@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
 const { createApp } = require('../../src/app');
 const invokeApp = require('../setup/invokeApp');
 
@@ -48,12 +49,15 @@ function createMemoryDb() {
       }
 
       if (text.includes('INSERT INTO lesson_plans')) {
-        const [userId, tema, nivelEnsino, duracaoMinutos, codigoBNCC, status, content, aiModel, promptVersion] = values;
+        const [userId, tema, nivelEnsino, etapaEnsino, serieAno, disciplina, duracaoMinutos, codigoBNCC, status, content, aiModel, promptVersion] = values;
         const plan = {
           id: `00000000-0000-4000-8000-${String(++planCounter).padStart(12, '0')}`,
           user_id: userId,
           tema,
           nivel_ensino: nivelEnsino,
+          etapa_ensino: etapaEnsino,
+          serie_ano: serieAno,
+          disciplina,
           duracao_minutos: duracaoMinutos,
           codigo_bncc: codigoBNCC,
           status,
@@ -129,21 +133,7 @@ function createTestApp() {
     geminiTimeoutMs: 100,
     geminiMaxRetries: 1,
   };
-  const content = {
-    titulo: 'Plano de teste',
-    resumo: 'Resumo suficientemente longo para o schema do plano.',
-    objetivos: ['Compreender o conteúdo'],
-    metodologia: ['Atividade guiada'],
-    recursos: ['Quadro'],
-    etapas: [
-      { titulo: 'Introdução', descricao: 'Apresentação do tema.', duracaoMinutos: 10 },
-      { titulo: 'Desenvolvimento', descricao: 'Atividade principal.', duracaoMinutos: 30 },
-      { titulo: 'Fechamento', descricao: 'Síntese da aula.', duracaoMinutos: 10 },
-    ],
-    avaliacao: ['Participação'],
-    adaptacoes: [],
-    habilidadesBNCC: [],
-  };
+  const content = createValidLessonPlanContent({ titulo: 'Plano de teste' });
   const geminiService = {
     async generateStructuredLessonPlan() {
       return { content, model: 'test-model', promptVersion: 'lesson-plan-v1', latencyMs: 1 };

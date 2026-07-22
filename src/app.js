@@ -33,6 +33,7 @@ function createApp(options = {}) {
   const geminiService = options.geminiService || createGeminiService({ env });
   const lessonPlanService = options.lessonPlanService || createLessonPlanService({
     db: pool,
+    env,
     geminiService,
     bnccService,
   });

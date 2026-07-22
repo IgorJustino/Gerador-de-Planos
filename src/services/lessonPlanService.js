@@ -3,7 +3,14 @@ const lessonPlanRepository = require('../repositories/lessonPlanRepository');
 const lessonPlanVersionRepository = require('../repositories/lessonPlanVersionRepository');
 const AppError = require('../utils/AppError');
 const { validateLessonPlanContent } = require('../schemas/geminiSchemas');
-const { buildLessonPlanPrompt } = require('./promptBuilder');
+const {
+  buildLessonPlanPrompt,
+  buildLessonPlanRevisionPrompt,
+} = require('./promptBuilder');
+const {
+  DEFAULT_QUALITY_THRESHOLD,
+  calculateLessonPlanQuality,
+} = require('./lessonPlanQualityService');
 
 const STATUS_TRANSITIONS = {
   draft: new Set(['reviewed', 'archived']),
@@ -12,12 +19,16 @@ const STATUS_TRANSITIONS = {
   archived: new Set(['draft']),
 };
 
-function serializeLessonPlan(plan) {
+function serializeLessonPlan(plan, qualityThreshold = DEFAULT_QUALITY_THRESHOLD) {
+  const bnccSkills = plan.habilidadesBNCCUsadas || [];
   return {
     id: plan.id,
     tema: plan.tema,
     nivelEnsino: plan.nivel_ensino,
     duracaoMinutos: plan.duracao_minutos,
+    etapaEnsino: plan.etapa_ensino || plan.nivel_ensino,
+    serieAno: plan.serie_ano || null,
+    disciplina: plan.disciplina || null,
     codigoBNCC: plan.codigo_bncc,
     status: plan.status,
     conteudo: plan.content,
@@ -26,11 +37,18 @@ function serializeLessonPlan(plan) {
     versaoPrompt: plan.prompt_version,
     criadoEm: plan.created_at,
     atualizadoEm: plan.updated_at,
-    habilidadesBNCCUsadas: plan.habilidadesBNCCUsadas || [],
+    habilidadesBNCCUsadas: bnccSkills,
+    alinhamentoBNCC: {
+      status: bnccSkills.length > 0 ? 'confirmado' : 'não selecionado',
+      quantidade: bnccSkills.length,
+    },
+    qualidade: calculateLessonPlanQuality(plan.content, plan.duracao_minutos, {
+      threshold: qualityThreshold,
+    }),
   };
 }
 
-function serializeLessonPlanVersion(version) {
+function serializeLessonPlanVersion(version, qualityThreshold = DEFAULT_QUALITY_THRESHOLD) {
   return {
     id: version.id,
     planId: version.lessonPlanId,
@@ -38,9 +56,15 @@ function serializeLessonPlanVersion(version) {
     source: version.source,
     tema: version.tema,
     nivelEnsino: version.nivelEnsino,
+    etapaEnsino: version.etapaEnsino || version.nivelEnsino,
+    serieAno: version.serieAno || null,
+    disciplina: version.disciplina || null,
     duracaoMinutos: version.duracaoMinutos,
     codigoBNCC: version.codigoBNCC,
     conteudo: version.content,
+    qualidade: calculateLessonPlanQuality(version.content, version.duracaoMinutos, {
+      threshold: qualityThreshold,
+    }),
     criadoEm: version.criadoEm,
   };
 }
@@ -51,6 +75,11 @@ function mergeLessonPlanChanges(currentPlan, changes) {
     nivelEnsino: changes.nivelEnsino !== undefined
       ? changes.nivelEnsino
       : currentPlan.nivel_ensino,
+    etapaEnsino: changes.etapaEnsino !== undefined
+      ? changes.etapaEnsino
+      : currentPlan.etapa_ensino || currentPlan.nivel_ensino,
+    serieAno: changes.serieAno !== undefined ? changes.serieAno : currentPlan.serie_ano,
+    disciplina: changes.disciplina !== undefined ? changes.disciplina : currentPlan.disciplina,
     duracaoMinutos: changes.duracaoMinutos !== undefined
       ? changes.duracaoMinutos
       : currentPlan.duracao_minutos,
@@ -68,13 +97,33 @@ function validationDetails(validation) {
   }));
 }
 
+function assertGeneratedContent(content, expectedDurationMinutes, allowedBnccCodes) {
+  const validation = validateLessonPlanContent(content, expectedDurationMinutes, {
+    allowedBnccCodes,
+  });
+  if (validation.success) return validation.data;
+
+  throw new AppError(
+    'O serviço de IA retornou um plano fora do formato esperado.',
+    502,
+    'AI_INVALID_RESPONSE',
+    validationDetails(validation)
+  );
+}
+
 function createLessonPlanService({
   db,
+  env = {},
   geminiService,
   bnccService = null,
   repository = lessonPlanRepository,
   versionRepository = lessonPlanVersionRepository,
 }) {
+  const qualityThreshold = Number.isInteger(env.aiQualityMinScore)
+    ? env.aiQualityMinScore
+    : DEFAULT_QUALITY_THRESHOLD;
+  const qualityReviewEnabled = env.aiQualityReviewEnabled !== false;
+
   async function generateLessonPlan({ userId, input }) {
     const bnccContext = bnccService
       ? await bnccService.resolveGenerationContext(input)
@@ -83,19 +132,69 @@ function createLessonPlanService({
       ...input,
       bnccContext,
     });
-    const generated = await geminiService.generateStructuredLessonPlan({
+    const totalDurationMinutes = input.duracaoMinutos * (input.quantidadeAulas || 1);
+    const generationOptions = {
+      expectedDurationMinutes: totalDurationMinutes,
+      allowedBnccCodes: bnccContext.map((skill) => skill.code),
+    };
+    let generated = await geminiService.generateStructuredLessonPlan({
       prompt,
-      expectedDurationMinutes: input.duracaoMinutos,
+      ...generationOptions,
     });
+    let validatedContent = assertGeneratedContent(
+      generated.content,
+      totalDurationMinutes,
+      bnccContext.map((skill) => skill.code)
+    );
+    const initialQuality = calculateLessonPlanQuality(
+      validatedContent,
+      totalDurationMinutes,
+      { threshold: qualityThreshold }
+    );
+
+    if (qualityReviewEnabled && !initialQuality.aprovado) {
+      const revisionPrompt = buildLessonPlanRevisionPrompt({
+        basePrompt: prompt,
+        content: validatedContent,
+        qualityReport: initialQuality,
+      });
+
+      try {
+        const revision = await geminiService.generateStructuredLessonPlan({
+          prompt: revisionPrompt,
+          ...generationOptions,
+        });
+        const revisedContent = assertGeneratedContent(
+          revision.content,
+          totalDurationMinutes,
+          bnccContext.map((skill) => skill.code)
+        );
+        const revisedQuality = calculateLessonPlanQuality(
+          revisedContent,
+          totalDurationMinutes,
+          { threshold: qualityThreshold }
+        );
+
+        if (revisedQuality.pontuacao > initialQuality.pontuacao) {
+          generated = revision;
+          validatedContent = revisedContent;
+        }
+      } catch (_error) {
+        // O primeiro plano já é estruturalmente válido; indisponibilidade na revisão não bloqueia o professor.
+      }
+    }
 
     const plan = await repository.createLessonPlan(db, {
       userId,
       tema: input.tema,
       nivelEnsino: input.nivelEnsino,
-      duracaoMinutos: input.duracaoMinutos,
+      etapaEnsino: input.etapaEnsino || input.nivelEnsino,
+      serieAno: input.serieAno || null,
+      disciplina: input.disciplina || null,
+      duracaoMinutos: totalDurationMinutes,
       codigoBNCC: input.codigoBNCC || null,
       status: 'draft',
-      content: generated.content,
+      content: validatedContent,
       aiModel: generated.model,
       promptVersion: generated.promptVersion || PROMPT_VERSION,
     });
@@ -105,7 +204,7 @@ function createLessonPlanService({
       plan.habilidadesBNCCUsadas = await bnccService.findSkillsByPlan(plan.id);
     }
 
-    return serializeLessonPlan(plan);
+    return serializeLessonPlan(plan, qualityThreshold);
   }
 
   async function listLessonPlans({ userId, page, limit, status, nivelEnsino, codigoBNCC, tema, sort }) {
@@ -119,7 +218,7 @@ function createLessonPlanService({
       sort,
     });
     return {
-      items: result.plans.map(serializeLessonPlan),
+      items: result.plans.map((plan) => serializeLessonPlan(plan, qualityThreshold)),
       pagination: {
         page: result.page,
         limit: result.limit,
@@ -134,7 +233,7 @@ function createLessonPlanService({
     if (plan && bnccService) {
       plan.habilidadesBNCCUsadas = await bnccService.findSkillsByPlan(plan.id);
     }
-    return plan ? serializeLessonPlan(plan) : null;
+    return plan ? serializeLessonPlan(plan, qualityThreshold) : null;
   }
 
   async function updateLessonPlan({ userId, id, expectedVersion, changes }) {
@@ -195,7 +294,7 @@ function createLessonPlanService({
       );
     }
 
-    return serializeLessonPlan(result.plan);
+    return serializeLessonPlan(result.plan, qualityThreshold);
   }
 
   async function listVersions({ userId, id, page, limit }) {
@@ -212,7 +311,9 @@ function createLessonPlanService({
     );
 
     return {
-      items: result.versions.map(serializeLessonPlanVersion),
+      items: result.versions.map(
+        (version) => serializeLessonPlanVersion(version, qualityThreshold)
+      ),
       pagination: {
         page: result.page,
         limit: result.limit,
@@ -234,7 +335,7 @@ function createLessonPlanService({
       throw new AppError('Versão não encontrada', 404, 'VERSION_NOT_FOUND');
     }
 
-    return serializeLessonPlanVersion(version);
+    return serializeLessonPlanVersion(version, qualityThreshold);
   }
 
   async function updateStatus({ userId, id, status }) {
@@ -244,7 +345,7 @@ function createLessonPlanService({
     }
 
     if (currentPlan.status === status) {
-      return serializeLessonPlan(currentPlan);
+      return serializeLessonPlan(currentPlan, qualityThreshold);
     }
 
     if (!STATUS_TRANSITIONS[currentPlan.status]?.has(status)) {
@@ -260,7 +361,7 @@ function createLessonPlanService({
       throw new AppError('Plano não encontrado', 404, 'PLAN_NOT_FOUND');
     }
 
-    return serializeLessonPlan(updatedPlan);
+    return serializeLessonPlan(updatedPlan, qualityThreshold);
   }
 
   async function deleteLessonPlan({ userId, id }) {

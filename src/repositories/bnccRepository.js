@@ -102,19 +102,30 @@ async function findSkillById(db, id) {
   return mapSkill(result.rows[0]);
 }
 
-async function semanticSearch(db, embedding, limit = 5) {
+async function semanticSearch(db, embedding, limit = 5, filters = {}) {
   const vector = `[${embedding.join(',')}]`;
   const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 10);
+  const values = [vector];
+  const clauses = ['embedding IS NOT NULL'];
+  function addFilter(column, value) {
+    if (!value) return;
+    values.push(`%${value}%`);
+    clauses.push(`${column} ILIKE $${values.length}`);
+  }
+  addFilter('subject', filters.subject);
+  addFilter('education_stage', filters.educationStage);
+  addFilter('school_year', filters.schoolYear);
+  values.push(safeLimit);
   const result = await db.query(
     `
       SELECT *,
         1 - (embedding <=> $1::vector) AS score
       FROM bncc_skills
-      WHERE embedding IS NOT NULL
+      WHERE ${clauses.join(' AND ')}
       ORDER BY embedding <=> $1::vector
-      LIMIT $2
+      LIMIT $${values.length}
     `,
-    [vector, safeLimit]
+    values
   );
   return result.rows.map(mapSkill);
 }

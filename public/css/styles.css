@@ -509,6 +509,58 @@ footer p {
     margin-bottom: 8px;
 }
 
+.quality-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.quality-score {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.quality-score-pass,
+.quality-criterion-pass strong {
+    color: #047857;
+}
+
+.quality-score-review,
+.quality-criterion-review strong {
+    color: #b45309;
+}
+
+.quality-progress {
+    width: 100%;
+    height: 12px;
+    accent-color: #047857;
+}
+
+.quality-status {
+    color: #4a5568;
+    margin: 10px 0 14px;
+}
+
+.quality-criteria {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 20px;
+    list-style: none;
+    padding: 0;
+}
+
+.quality-criteria li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 0;
+    font-size: 0.9rem;
+}
+
 .lesson-list {
     padding-left: 22px;
 }
@@ -642,6 +694,10 @@ footer p {
     gap: 16px;
 }
 
+.form-grid-three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .edit-panel textarea {
     min-height: 84px;
 }
@@ -759,6 +815,21 @@ footer p {
     margin-top: 12px;
 }
 
+.bncc-recommendation-notice {
+    margin: 12px 0 8px;
+    padding: 10px 12px;
+    border-left: 3px solid #2b6cb0;
+    background: #ebf8ff;
+    color: #2c5282;
+    font-size: 0.9rem;
+}
+
+.bncc-recommendation-title {
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
 .bncc-result,
 .selected-skill {
     background: #f7fafc;
@@ -816,7 +887,8 @@ footer p {
 
     .status-row,
     .form-grid,
-    .metrics-grid {
+    .metrics-grid,
+    .quality-criteria {
         grid-template-columns: 1fr;
     }
 

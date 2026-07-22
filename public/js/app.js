@@ -4,6 +4,7 @@
         plans: [],
         selectedPlan: null,
         selectedBnccSkill: null,
+        bnccRecommendationTimer: null,
         viewedVersion: null,
         pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
         versionsPagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
@@ -67,6 +68,40 @@
     const bnccSearchButton = document.getElementById('btnBuscarBNCC');
     const bnccSelected = document.getElementById('bnccSelecionada');
     const bnccResults = document.getElementById('bnccResultados');
+    const bnccRecommendations = document.getElementById('bnccRecomendacoes');
+    const bnccRecommendationNotice = document.getElementById('bnccRecomendacaoAviso');
+
+    const serieAnoOptions = {
+        'Educação Infantil': ['Creche', 'Pré-escola'],
+        'Ensino Fundamental I': ['1º ano', '2º ano', '3º ano', '4º ano', '5º ano'],
+        'Ensino Fundamental II': ['6º ano', '7º ano', '8º ano', '9º ano'],
+        'Ensino Médio': ['1ª série', '2ª série', '3ª série'],
+    };
+
+    function updateSerieAnoOptions() {
+        const nivel = document.getElementById('nivelEnsino').value;
+        const serieAno = document.getElementById('serieAno');
+        const currentValue = serieAno.value;
+        const options = serieAnoOptions[nivel] || [];
+
+        serieAno.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = options.length ? 'Selecione...' : 'Selecione o nível primeiro...';
+        serieAno.appendChild(placeholder);
+
+        options.forEach((optionValue) => {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = optionValue;
+            serieAno.appendChild(option);
+        });
+
+        if (options.includes(currentValue)) {
+            serieAno.value = currentValue;
+        }
+        serieAno.setCustomValidity('');
+    }
 
     function redirectToLogin() {
         if (state.redirecting || window.location.pathname.endsWith('/login.html')) return;
@@ -219,6 +254,88 @@
         });
     }
 
+    function renderBnccRecommendations(items) {
+        bnccRecommendations.replaceChildren();
+        bnccRecommendationNotice.hidden = !items || items.length === 0;
+        if (!items || items.length === 0) return;
+
+        const heading = element('p', 'bncc-recommendation-title', 'Habilidades recomendadas pela IA');
+        bnccRecommendations.append(heading);
+        items.slice(0, 3).forEach((skill, index) => {
+            const item = element('article', 'bncc-result');
+            const info = element('div', 'bncc-result-info');
+            info.append(
+                element('p', 'bncc-code', `${skill.code}${index === 0 ? ' · mais relevante' : ''}`),
+                element('p', 'bncc-description', `${skill.subject} · ${skill.educationStage}${skill.schoolYear ? ` · ${skill.schoolYear}` : ''}`),
+                element('p', 'bncc-description', skill.description),
+                element('p', 'bncc-description', `Tags: ${(skill.tags || []).join(', ') || 'alinhamento temático'}`),
+                element('p', 'bncc-description', `Motivo: ${skill.reason || 'relaciona-se ao tema, à disciplina e ao recorte informado.'}`)
+            );
+            const select = element('button', 'btn-acao btn-ver', state.selectedBnccSkill?.id === skill.id ? 'Selecionada' : 'Selecionar');
+            select.type = 'button';
+            select.addEventListener('click', () => {
+                state.selectedBnccSkill = skill;
+                document.getElementById('codigoBNCC').value = skill.code;
+                renderSelectedBnccSkill();
+                renderBnccRecommendations(items);
+            });
+            item.append(info, select);
+            bnccRecommendations.append(item);
+        });
+    }
+
+    async function recommendBnccSkills() {
+        const tema = document.getElementById('tema').value.trim();
+        const etapa = document.getElementById('nivelEnsino').value.trim();
+        const serieAno = document.getElementById('serieAno').value.trim();
+        const disciplina = document.getElementById('disciplina').value.trim();
+        if (tema.length < 3 || !etapa || !serieAno || disciplina.length < 2) return;
+
+        try {
+            const subject = /história|geografia|sociologia|filosofia/i.test(disciplina)
+                ? 'Ciências Humanas'
+                : /biologia|química|física|ciências/i.test(disciplina)
+                    ? 'Ciências da Natureza'
+                    : disciplina;
+            let payload;
+            try {
+                payload = await ApiClient.request('/api/bncc/recommendations', {
+                    method: 'POST',
+                    body: {
+                        tema,
+                        disciplina,
+                        etapaEnsino: etapa,
+                        serieAno,
+                        limit: 3,
+                    },
+                });
+            } catch (_semanticError) {
+                payload = await ApiClient.request(`/api/bncc/search?${buildQuery({
+                    q: tema,
+                    subject,
+                    educationStage: etapa,
+                    schoolYear: etapa === 'Ensino Médio' ? undefined : serieAno,
+                    limit: 3,
+                })}`);
+            }
+            const items = payload?.items || [];
+            renderBnccRecommendations(items);
+            if (!state.selectedBnccSkill && items[0]) {
+                state.selectedBnccSkill = items[0];
+                document.getElementById('codigoBNCC').value = items[0].code;
+                renderSelectedBnccSkill();
+                renderBnccRecommendations(items);
+            }
+        } catch (error) {
+            if (error.status !== 401) renderBnccRecommendations([]);
+        }
+    }
+
+    function scheduleBnccRecommendations() {
+        clearTimeout(state.bnccRecommendationTimer);
+        state.bnccRecommendationTimer = setTimeout(recommendBnccSkills, 350);
+    }
+
     async function searchBnccSkills() {
         const query = bnccSearchInput.value.trim();
         if (query.length < 2) {
@@ -258,18 +375,31 @@
         const tema = document.getElementById('tema');
         const nivel = document.getElementById('nivelEnsino');
         const duration = document.getElementById('duracao');
+        const quantidadeAulas = document.getElementById('quantidadeAulas');
         const bncc = document.getElementById('codigoBNCC');
         const context = document.getElementById('contextoAdicional');
-        [tema, nivel, duration, bncc, context].forEach((field) => field.setCustomValidity(''));
+        const serieAno = document.getElementById('serieAno');
+        const disciplina = document.getElementById('disciplina');
+        [tema, nivel, duration, quantidadeAulas, bncc, context, serieAno, disciplina].forEach((field) => field.setCustomValidity(''));
 
         if (tema.value.trim().length < 3 || tema.value.trim().length > 200) {
             tema.setCustomValidity('O tema deve ter entre 3 e 200 caracteres.');
         } else if (!nivel.value || nivel.value.trim().length < 2) {
             nivel.setCustomValidity('Selecione um nível de ensino.');
+        } else if (serieAno.value.trim().length < 1) {
+            serieAno.setCustomValidity('Informe a série ou ano.');
+        } else if (disciplina.value.trim().length < 2) {
+            disciplina.setCustomValidity('Informe a disciplina.');
         } else if (!Number.isInteger(Number(duration.value)) || Number(duration.value) < 10 || Number(duration.value) > 300) {
             duration.setCustomValidity('A duração deve ser um número inteiro entre 10 e 300 minutos.');
-        } else if (bncc.value.trim() && !/^[A-Za-z]{2}\d{2}[A-Za-z]{2}\d{2}$/.test(bncc.value.trim())) {
-            bncc.setCustomValidity('Use um código no formato EF05CI01.');
+        } else if (
+            !Number.isInteger(Number(quantidadeAulas.value))
+            || Number(quantidadeAulas.value) < 1
+            || Number(quantidadeAulas.value) > 20
+        ) {
+            quantidadeAulas.setCustomValidity('A quantidade de aulas deve ser um número inteiro entre 1 e 20.');
+        } else if (bncc.value.trim() && !/^[A-Za-z]{2}\d{2}[A-Za-z]{2,3}\d{2,3}$/.test(bncc.value.trim())) {
+            bncc.setCustomValidity('Use um código BNCC válido, como EF05CI01 ou EM13CHS101.');
         } else if (context.value.length > 1000) {
             context.setCustomValidity('O contexto adicional deve ter no máximo 1.000 caracteres.');
         }
@@ -277,11 +407,19 @@
         return form.reportValidity();
     }
 
+    function clearFieldValidity(event) {
+        event.target.setCustomValidity('');
+    }
+
     function collectFormData() {
         return {
             tema: document.getElementById('tema').value.trim(),
             nivelEnsino: document.getElementById('nivelEnsino').value.trim(),
+            etapaEnsino: document.getElementById('nivelEnsino').value.trim(),
+            serieAno: document.getElementById('serieAno').value.trim(),
+            disciplina: document.getElementById('disciplina').value.trim(),
             duracaoMinutos: Number(document.getElementById('duracao').value),
+            quantidadeAulas: Number(document.getElementById('quantidadeAulas').value),
             codigoBNCC: document.getElementById('codigoBNCC').value.trim() || undefined,
             bnccSkillId: state.selectedBnccSkill?.id,
             contextoAdicional: document.getElementById('contextoAdicional').value.trim() || undefined,
@@ -736,6 +874,7 @@
     }
 
     async function init() {
+        updateSerieAnoOptions();
         state.loading.session = true;
         try {
             const payload = await ApiClient.request('/api/auth/me', { skipUnauthorized: true });
@@ -786,7 +925,19 @@
         if (!visible && state.plans.length === 0) loadHistory(1);
     });
 
-    document.getElementById('duracao').addEventListener('input', validateForm);
+    ['tema', 'nivelEnsino', 'serieAno', 'disciplina', 'duracao', 'quantidadeAulas', 'codigoBNCC', 'contextoAdicional'].forEach((id) => {
+        const field = document.getElementById(id);
+        field.addEventListener('input', clearFieldValidity);
+        field.addEventListener('change', clearFieldValidity);
+    });
+    document.getElementById('nivelEnsino').addEventListener('change', () => {
+        updateSerieAnoOptions();
+        scheduleBnccRecommendations();
+    });
+    ['tema', 'serieAno', 'disciplina'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', scheduleBnccRecommendations);
+        document.getElementById(id).addEventListener('change', scheduleBnccRecommendations);
+    });
     document.getElementById('codigoBNCC').addEventListener('input', (event) => {
         event.target.value = event.target.value.toUpperCase();
         if (state.selectedBnccSkill && event.target.value !== state.selectedBnccSkill.code) {

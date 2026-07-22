@@ -129,7 +129,11 @@ function createGeminiService({ env, provider } = {}) {
     }
   }
 
-  async function generateStructuredLessonPlan({ prompt, expectedDurationMinutes }) {
+  async function generateStructuredLessonPlan({
+    prompt,
+    expectedDurationMinutes,
+    allowedBnccCodes = [],
+  }) {
     const attempts = 1 + Math.min(Math.max(env.geminiMaxRetries || 0, 0), 1);
     let lastValidationError;
     const startedAt = Date.now();
@@ -145,7 +149,9 @@ function createGeminiService({ env, provider } = {}) {
           env.geminiTimeoutMs
         );
         const content = parseProviderContent(result.content ?? result.data ?? result.text);
-        const validation = validateLessonPlanContent(content, expectedDurationMinutes);
+        const validation = validateLessonPlanContent(content, expectedDurationMinutes, {
+          allowedBnccCodes,
+        });
 
         if (!validation.success) {
           lastValidationError = validation.error;

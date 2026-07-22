@@ -7,6 +7,7 @@ const {
   bnccSearchQuerySchema,
   bnccCodeParamsSchema,
   bnccSemanticSearchSchema,
+  bnccRecommendationSchema,
 } = require('../schemas/bnccSchemas');
 
 function createBnccRoutes({ authService, env, bnccService }) {
@@ -26,6 +27,13 @@ function createBnccRoutes({ authService, env, bnccService }) {
     authenticate,
     validate(bnccSemanticSearchSchema),
     controller.semanticSearch
+  );
+
+  router.post(
+    '/recommendations',
+    authenticate,
+    validate(bnccRecommendationSchema),
+    controller.recommend
   );
 
   router.get(

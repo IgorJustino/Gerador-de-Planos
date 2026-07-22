@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
 const { getEnv } = require('../../src/config/env');
 const { createPool } = require('../../src/config/database');
 const { createApp } = require('../../src/app');
@@ -50,21 +51,12 @@ test('endpoints BNCC e geração RAG registram habilidades usadas', {
         return {
           model: 'test-model',
           promptVersion: 'lesson-plan-v1',
-          content: {
+          content: createValidLessonPlanContent({
             titulo: 'Plano com BNCC',
-            resumo: 'Resumo suficientemente longo para validar RAG.',
-            objetivos: ['Compreender o contexto'],
-            metodologia: ['Atividade guiada'],
-            recursos: ['Quadro'],
-            etapas: [
-              { titulo: 'Aula', descricao: 'Descrição da aula.', duracaoMinutos: 50 },
-            ],
-            avaliacao: ['Participação'],
-            adaptacoes: [],
             habilidadesBNCC: [
               { codigo: 'EF05CI01', descricao: 'Habilidade usada como referência.' },
             ],
-          },
+          }),
         };
       },
     },

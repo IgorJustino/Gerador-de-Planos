@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
 const { getEnv } = require('../../src/config/env');
 const { createPool } = require('../../src/config/database');
 const { createApp } = require('../../src/app');
@@ -31,21 +32,7 @@ test('API de edição, versões, status e exclusão usa snapshots e isolamento',
     GENERATION_RATE_LIMIT_MAX: '20',
   });
   const pool = createPool(env);
-  const content = {
-    titulo: 'Plano para edição',
-    resumo: 'Resumo suficientemente longo para validar a edição do plano.',
-    objetivos: ['Compreender o conteúdo'],
-    metodologia: ['Atividade guiada'],
-    recursos: ['Quadro'],
-    etapas: [
-      { titulo: 'Introdução', descricao: 'Apresentação do tema.', duracaoMinutos: 10 },
-      { titulo: 'Desenvolvimento', descricao: 'Atividade principal.', duracaoMinutos: 30 },
-      { titulo: 'Fechamento', descricao: 'Síntese da aula.', duracaoMinutos: 10 },
-    ],
-    avaliacao: ['Participação'],
-    adaptacoes: [],
-    habilidadesBNCC: [],
-  };
+  const content = createValidLessonPlanContent({ titulo: 'Plano para edição' });
   const app = createApp({
     env,
     pool,

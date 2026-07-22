@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const { createBnccService } = require('../../src/services/bnccService');
+const { createValidLessonPlanContent } = require('../fixtures/lessonPlanContent');
+const { createBnccService, normalizeSubjectArea } = require('../../src/services/bnccService');
 const { createEmbeddingService, normalizeEmbeddingInput } = require('../../src/services/embeddingService');
 const { buildLessonPlanPrompt } = require('../../src/services/promptBuilder');
 const { createLessonPlanService } = require('../../src/services/lessonPlanService');
@@ -65,6 +66,42 @@ test('bncc service executa busca textual e semântica com mocks', async () => {
   assert.deepEqual(calls, ['aula energia']);
 });
 
+test('recomenda habilidades por preset oficial para História', async () => {
+  const codes = ['EM13CHS103', 'EM13CHS204', 'EM13CHS101'];
+  const service = createBnccService({
+    db: {},
+    embeddingService: { async generateEmbedding() { return [1, 0, 0]; } },
+    repository: {
+      async findSkillByCode(_db, code) {
+        if (!codes.includes(code)) return null;
+        return {
+          ...skill,
+          id: code,
+          code,
+          subject: 'Ciências Humanas e Sociais Aplicadas',
+          educationStage: 'Ensino Médio',
+          description: `Descrição oficial ${code}`,
+        };
+      },
+      async semanticSearch() { return []; },
+    },
+  });
+
+  assert.equal(normalizeSubjectArea('História'), 'Ciências Humanas');
+  const result = await service.recommendSkills({
+    tema: 'Conquistas de Alexandre e impérios',
+    disciplina: 'História',
+    etapaEnsino: 'Ensino Médio',
+    serieAno: '2º ano',
+    limit: 3,
+  });
+
+  assert.deepEqual(result.items.map((item) => item.code), codes);
+  assert.equal(result.items[0].recommendationSource, 'preset');
+  assert.deepEqual(result.items[0].tags.slice(0, 3), ['hipótese', 'evidências', 'argumentação']);
+  assert.match(result.items[0].reason, /hipótese/);
+});
+
 test('prompt builder inclui contexto BNCC recuperado sem validação oficial automática', () => {
   const prompt = buildLessonPlanPrompt({
     tema: 'Fotossíntese',
@@ -77,28 +114,21 @@ test('prompt builder inclui contexto BNCC recuperado sem validação oficial aut
   assert.match(prompt, /<contexto_bncc>/);
   assert.match(prompt, /Código: EF05CI01/);
   assert.match(prompt, /Seed fictício de demonstração/);
-  assert.match(prompt, /sem afirmar validação oficial automática/);
+  assert.match(prompt, /[Nn]ão afirme validação oficial automática/);
 });
 
 test('geração usa contexto BNCC e registra habilidades usadas', async () => {
   const attached = [];
   let promptUsed = '';
-  const content = {
-    titulo: 'Plano',
-    resumo: 'Resumo suficientemente longo.',
-    objetivos: ['Objetivo'],
-    metodologia: ['Método'],
-    recursos: [],
-    etapas: [{ titulo: 'Aula', descricao: 'Descrição', duracaoMinutos: 50 }],
-    avaliacao: ['Avaliação'],
-    adaptacoes: [],
+  const content = createValidLessonPlanContent({
     habilidadesBNCC: [{ codigo: 'EF05CI01', descricao: 'Descrição' }],
-  };
+  });
   const service = createLessonPlanService({
     db: {},
     geminiService: {
-      async generateStructuredLessonPlan({ prompt }) {
+      async generateStructuredLessonPlan({ prompt, allowedBnccCodes }) {
         promptUsed = prompt;
+        assert.deepEqual(allowedBnccCodes, ['EF05CI01']);
         return { content, model: 'mock', promptVersion: 'lesson-plan-v1' };
       },
     },

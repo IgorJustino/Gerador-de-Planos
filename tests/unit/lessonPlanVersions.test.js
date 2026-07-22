@@ -84,9 +84,12 @@ test('cria versão e atualiza plano dentro de transação com bloqueio', async (
   assert.match(db.calls[1].text, /FOR UPDATE/);
   assert.match(db.calls.at(-1).text, /COMMIT/);
   assert.deepEqual(db.calls.at(-2).values, [
-    'Novo tema',
-    '5º ano',
-    50,
+      'Novo tema',
+      '5º ano',
+      '5º ano',
+      null,
+      null,
+      50,
     'EF05CI01',
     { titulo: 'Novo plano' },
     2,
