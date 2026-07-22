@@ -127,6 +127,17 @@ Escolhemos snapshots completos para permitir a reconstrução exata do plano em
 qualquer ponto do histórico, incluindo tema, nível, duração, código BNCC e
 conteúdo estruturado.
 
+## ADR-012 — Edição com controle otimista
+
+**Decisão:** toda edição manual exige `expectedVersion`. O service monta um
+snapshot completo a partir do estado atual e das alterações recebidas. O
+repository bloqueia o plano, compara `expectedVersion` com `current_version` e
+cria a nova versão somente quando os valores coincidem.
+
+Conflitos retornam HTTP 409 com código `VERSION_CONFLICT`. Alterações de status
+são operacionais e não criam versões de conteúdo. A interface dessas operações
+fica para a 4C.
+
 ## ADR-007 — BNCC e RAG
 
 **Decisão:** separar a evolução em duas fases.

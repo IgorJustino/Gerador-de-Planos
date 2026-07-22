@@ -31,11 +31,19 @@ Migrations não são executadas automaticamente pelo processo web.
 
 ## Status da modernização
 
-Os Marcos 2, 3A, 3B, 3C e 3D estão concluídos. O fluxo principal usa
+Os Marcos 2, 3A, 3B, 3C, 3D, 3E, 4A e 4B estão concluídos. O fluxo principal usa
 autenticação própria por cookie `httpOnly`, Gemini com JSON estruturado,
-PostgreSQL e histórico privado por usuário. O legado do Supabase foi removido
-da arquitetura ativa.
+PostgreSQL, histórico privado por usuário e versionamento transacional. O
+legado do Supabase foi removido da arquitetura ativa.
 
 O frontend moderno não armazena JWT, não usa Supabase e renderiza a resposta da
-IA com `textContent` e elementos DOM. Ainda não há edição, versionamento, RAG,
-feedback ou métricas avançadas.
+IA com `textContent` e elementos DOM. A API já possui edição, histórico de
+versões, controle otimista, status e exclusão; a interface dessas operações
+será implementada no Marco 4C. Ainda não há RAG, feedback ou métricas
+avançadas.
+
+## API
+
+Os endpoints estão documentados em [`docs/API.md`](docs/API.md). As operações
+de edição exigem `expectedVersion` e criam snapshots manuais sem sobrescrever
+o histórico anterior.

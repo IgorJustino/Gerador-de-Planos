@@ -66,9 +66,39 @@ async function findLessonPlanByIdAndUser(db, id, userId) {
   return result.rows[0] || null;
 }
 
+async function updateLessonPlanStatus(db, id, userId, status) {
+  const result = await db.query(
+    `
+      UPDATE lesson_plans
+      SET status = $1,
+          updated_at = NOW()
+      WHERE id = $2 AND user_id = $3
+      RETURNING *
+    `,
+    [status, id, userId]
+  );
+
+  return result.rows[0] || null;
+}
+
+async function deleteLessonPlanByIdAndUser(db, id, userId) {
+  const result = await db.query(
+    `
+      DELETE FROM lesson_plans
+      WHERE id = $1 AND user_id = $2
+      RETURNING id
+    `,
+    [id, userId]
+  );
+
+  return result.rows[0] || null;
+}
+
 module.exports = {
   createLessonPlan,
   findLessonPlansByUser,
   findLessonPlanByIdAndUser,
+  updateLessonPlanStatus,
+  deleteLessonPlanByIdAndUser,
   normalizePagination,
 };

@@ -113,6 +113,7 @@ async function createVersionAndUpdateCurrentPlan(db, {
   planId,
   userId,
   source,
+  expectedVersion,
   tema,
   nivelEnsino,
   duracaoMinutos,
@@ -133,7 +134,17 @@ async function createVersionAndUpdateCurrentPlan(db, {
     );
 
     const currentPlan = planResult.rows[0];
-    if (!currentPlan) return null;
+    if (!currentPlan) return { outcome: 'not_found' };
+
+    if (
+      expectedVersion !== undefined
+      && currentPlan.current_version !== expectedVersion
+    ) {
+      return {
+        outcome: 'version_conflict',
+        currentVersion: currentPlan.current_version,
+      };
+    }
 
     const nextVersion = currentPlan.current_version + 1;
     const versionResult = await client.query(
@@ -171,6 +182,7 @@ async function createVersionAndUpdateCurrentPlan(db, {
     );
 
     return {
+      outcome: 'success',
       plan: updatedPlanResult.rows[0],
       version: mapVersion(versionResult.rows[0]),
     };

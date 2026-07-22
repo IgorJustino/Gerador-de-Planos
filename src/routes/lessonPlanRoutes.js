@@ -8,6 +8,9 @@ const {
   lessonPlanGenerationSchema,
   lessonPlanListQuerySchema,
   lessonPlanIdParamsSchema,
+  lessonPlanVersionParamsSchema,
+  lessonPlanUpdateSchema,
+  lessonPlanStatusSchema,
 } = require('../schemas/lessonPlanSchemas');
 
 function createGenerationRateLimiter(env) {
@@ -46,6 +49,39 @@ function createLessonPlanRoutes({ authService, env, lessonPlanService }) {
     authenticate,
     validate(lessonPlanListQuerySchema, 'query'),
     controller.list
+  );
+  router.get(
+    '/:id/versoes/:versionNumber',
+    authenticate,
+    validate(lessonPlanVersionParamsSchema, 'params'),
+    controller.getVersion
+  );
+  router.get(
+    '/:id/versoes',
+    authenticate,
+    validate(lessonPlanIdParamsSchema, 'params'),
+    validate(lessonPlanListQuerySchema, 'query'),
+    controller.listVersions
+  );
+  router.patch(
+    '/:id/status',
+    authenticate,
+    validate(lessonPlanIdParamsSchema, 'params'),
+    validate(lessonPlanStatusSchema),
+    controller.updateStatus
+  );
+  router.patch(
+    '/:id',
+    authenticate,
+    validate(lessonPlanIdParamsSchema, 'params'),
+    validate(lessonPlanUpdateSchema),
+    controller.update
+  );
+  router.delete(
+    '/:id',
+    authenticate,
+    validate(lessonPlanIdParamsSchema, 'params'),
+    controller.remove
   );
   router.get(
     '/:id',

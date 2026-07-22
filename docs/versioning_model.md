@@ -57,8 +57,10 @@ alterações simultâneas calculem o mesmo número; a constraint única em
 A migration da 4A cria a versão 1 com `source = 'ai'` para cada plano já
 existente, copiando seus campos e preservando a data original de criação.
 
-## Estado da API
+## Estado da API e da interface
 
-Nesta etapa, o histórico de versões existe no banco e nos repositories, mas
-ainda não há endpoints públicos nem interface de edição. Esses recursos serão
-implementados na 4B e na 4C.
+A API já expõe edição manual, histórico, consulta de versão, status e exclusão.
+Edições exigem `expectedVersion` e usam `source = 'manual'`.
+
+A interface de edição e histórico ainda não existe; ela será implementada na
+4C.
