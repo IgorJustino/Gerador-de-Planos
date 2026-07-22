@@ -62,5 +62,7 @@ existente, copiando seus campos e preservando a data original de criação.
 A API já expõe edição manual, histórico, consulta de versão, status e exclusão.
 Edições exigem `expectedVersion` e usam `source = 'manual'`.
 
-A interface de edição e histórico ainda não existe; ela será implementada na
-4C.
+A interface do Marco 4C conecta esses endpoints ao frontend principal. O usuário
+pode editar o snapshot atual, salvar uma nova versão manual, abrir versões
+anteriores, alterar status e excluir planos. Abrir uma versão antiga apenas
+exibe o snapshot; restauração dedicada ainda não foi implementada.

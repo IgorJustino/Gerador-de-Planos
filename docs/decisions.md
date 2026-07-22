@@ -135,8 +135,9 @@ repository bloqueia o plano, compara `expectedVersion` com `current_version` e
 cria a nova versão somente quando os valores coincidem.
 
 Conflitos retornam HTTP 409 com código `VERSION_CONFLICT`. Alterações de status
-são operacionais e não criam versões de conteúdo. A interface dessas operações
-fica para a 4C.
+são operacionais e não criam versões de conteúdo. A interface do Marco 4C usa
+esses contratos para edição, consulta de versões, status e exclusão sem
+armazenar tokens no navegador.
 
 ## ADR-007 — BNCC e RAG
 

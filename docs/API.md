@@ -107,5 +107,6 @@ Plano inexistente ou pertencente a outro usuário retorna `404`.
 429 RATE_LIMIT_EXCEEDED
 ```
 
-O frontend de edição ainda não foi implementado; os endpoints desta página são
-o contrato utilizado pelo Marco 4C.
+O frontend do Marco 4C consome estes endpoints para edição, histórico de
+versões, alteração de status e exclusão. Restauração dedicada de versões ainda
+não foi implementada.

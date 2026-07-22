@@ -598,6 +598,95 @@ footer p {
     border-color: #e53e3e;
 }
 
+.plan-management[hidden],
+.edit-panel[hidden],
+.versions-panel[hidden] {
+    display: none;
+}
+
+.management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.management-header h2 {
+    color: #2d3748;
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+}
+
+.management-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.status-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr) auto;
+    align-items: end;
+    gap: 12px;
+}
+
+.status-row label {
+    margin-bottom: 12px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.edit-panel textarea {
+    min-height: 84px;
+}
+
+.edit-panel #editEtapas {
+    min-height: 140px;
+}
+
+.version-item {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.version-info {
+    flex: 1;
+}
+
+.version-title {
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.version-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.unsaved-warning {
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+}
+
 @media (max-width: 768px) {
     .plano-item {
         flex-direction: column;
@@ -611,6 +700,21 @@ footer p {
 
     .btn-acao {
         flex: 1;
+    }
+
+    .management-header,
+    .version-item {
+        flex-direction: column;
+    }
+
+    .management-actions,
+    .version-actions {
+        width: 100%;
+    }
+
+    .status-row,
+    .form-grid {
+        grid-template-columns: 1fr;
     }
 }
 

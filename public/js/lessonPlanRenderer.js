@@ -34,7 +34,10 @@
             nivelEnsino: plan.nivelEnsino || plan.nivel_ensino || '',
             duracaoMinutos: plan.duracaoMinutos || plan.duracao_minutos || 0,
             codigoBNCC: plan.codigoBNCC || plan.codigo_bncc || '',
+            status: plan.status || '',
+            versaoAtual: plan.versaoAtual || plan.current_version || 1,
             criadoEm: plan.criadoEm || plan.created_at,
+            atualizadoEm: plan.atualizadoEm || plan.updated_at,
         };
     }
 
@@ -98,6 +101,7 @@
             ['⏱️', `${plan.duracaoMinutos} min`],
             ['📋', plan.codigoBNCC],
             ['📌', plan.status],
+            ['#', `v${plan.versaoAtual}`],
         ].forEach(([icon, value]) => {
             if (value) meta.append(element('span', 'meta-tag', `${icon} ${value}`));
         });
