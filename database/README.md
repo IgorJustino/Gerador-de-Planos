@@ -40,9 +40,22 @@ devem ser executadas em uma etapa controlada, nunca automaticamente pelo
 processo web.
 
 O Marco 2 criou a extensão `pgcrypto` e a tabela base `users`. A 3A adiciona
-`lesson_plans`, suas constraints, índices e triggers de `updated_at`. As
-tabelas de versões, feedback e métricas serão adicionadas nos próximos
-marcos.
+`lesson_plans`, suas constraints, índices e triggers de `updated_at`. A 4A
+adiciona `lesson_plan_versions` e `lesson_plans.current_version`, mantendo um
+snapshot completo para cada versão e fazendo backfill da versão 1 para planos
+existentes. Feedback e métricas serão adicionados nos próximos marcos.
+
+## Versionamento de planos
+
+`lesson_plans` mantém o snapshot atual para consultas e listagens rápidas.
+`lesson_plan_versions` mantém o histórico imutável de snapshots completos,
+com `source` igual a `ai` ou `manual` e unicidade por
+`(lesson_plan_id, version_number)`.
+
+A criação da versão inicial e a criação de versões posteriores ocorrem em
+transação. Para versões posteriores, o plano é bloqueado com `SELECT ... FOR
+UPDATE` antes do cálculo do próximo número. A foreign key usa `ON DELETE
+CASCADE`, portanto as versões são removidas junto com o plano.
 
 O seed cria o usuário fictício `demo@example.com` com a senha `demo123` para
 uso local. Essa credencial não deve ser usada em produção.

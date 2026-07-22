@@ -4,6 +4,11 @@ const test = require('node:test');
 const { getEnv } = require('../../src/config/env');
 const { createPool } = require('../../src/config/database');
 const { createApp } = require('../../src/app');
+const {
+  createVersionAndUpdateCurrentPlan,
+  findVersionsByPlanAndUser,
+  findVersionByNumberAndUser,
+} = require('../../src/repositories/lessonPlanVersionRepository');
 const invokeApp = require('../setup/invokeApp');
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -75,13 +80,104 @@ test('fluxo de planos persiste no PostgreSQL de teste', {
     assert.equal(response.body.plano.conteudo.titulo, 'Plano PostgreSQL');
 
     const stored = await pool.query(
-      'SELECT user_id, content, ai_model, prompt_version FROM lesson_plans WHERE id = $1',
+      'SELECT user_id, content, ai_model, prompt_version, current_version FROM lesson_plans WHERE id = $1',
       [response.body.plano.id]
     );
     assert.equal(stored.rows.length, 1);
     assert.equal(stored.rows[0].content.titulo, 'Plano PostgreSQL');
     assert.equal(stored.rows[0].ai_model, 'test-model');
     assert.equal(stored.rows[0].prompt_version, 'lesson-plan-v1');
+    assert.equal(stored.rows[0].current_version, 1);
+
+    const initialVersion = await pool.query(
+      `
+        SELECT version_number, source, tema, nivel_ensino, duracao_minutos,
+               codigo_bncc, content
+        FROM lesson_plan_versions
+        WHERE lesson_plan_id = $1
+        ORDER BY version_number
+      `,
+      [response.body.plano.id]
+    );
+    assert.equal(initialVersion.rows.length, 1);
+    assert.equal(initialVersion.rows[0].version_number, 1);
+    assert.equal(initialVersion.rows[0].source, 'ai');
+    assert.deepEqual(initialVersion.rows[0].content, content);
+
+    const versionTwo = await createVersionAndUpdateCurrentPlan(pool, {
+      planId: response.body.plano.id,
+      userId: register.body.user.id,
+      source: 'manual',
+      tema: 'Fotossíntese revisada',
+      nivelEnsino: '5º ano',
+      duracaoMinutos: 45,
+      codigoBNCC: 'EF05CI01',
+      content: { ...content, titulo: 'Plano revisado' },
+    });
+    assert.equal(versionTwo.version.versionNumber, 2);
+
+    const [concurrentA, concurrentB] = await Promise.all([
+      createVersionAndUpdateCurrentPlan(pool, {
+        planId: response.body.plano.id,
+        userId: register.body.user.id,
+        source: 'manual',
+        tema: 'Versão concorrente A',
+        nivelEnsino: '5º ano',
+        duracaoMinutos: 40,
+        content: { ...content, titulo: 'Versão A' },
+      }),
+      createVersionAndUpdateCurrentPlan(pool, {
+        planId: response.body.plano.id,
+        userId: register.body.user.id,
+        source: 'manual',
+        tema: 'Versão concorrente B',
+        nivelEnsino: '5º ano',
+        duracaoMinutos: 40,
+        content: { ...content, titulo: 'Versão B' },
+      }),
+    ]);
+    assert.deepEqual(
+      [concurrentA.version.versionNumber, concurrentB.version.versionNumber].sort(),
+      [3, 4]
+    );
+
+    const current = await pool.query(
+      'SELECT current_version, tema, content FROM lesson_plans WHERE id = $1',
+      [response.body.plano.id]
+    );
+    assert.equal(current.rows[0].current_version, 4);
+    assert.equal(current.rows[0].content.titulo, current.rows[0].tema === 'Versão concorrente A'
+      ? 'Versão A'
+      : 'Versão B');
+
+    const versions = await findVersionsByPlanAndUser(
+      pool,
+      response.body.plano.id,
+      register.body.user.id,
+      { page: 1, limit: 20 }
+    );
+    assert.equal(versions.total, 4);
+    assert.deepEqual(versions.versions.map((item) => item.versionNumber), [4, 3, 2, 1]);
+    assert.equal(
+      (await findVersionByNumberAndUser(
+        pool,
+        response.body.plano.id,
+        1,
+        register.body.user.id
+      )).versionNumber,
+      1
+    );
+    assert.equal(
+      await findVersionByNumberAndUser(pool, response.body.plano.id, 1, '00000000-0000-4000-8000-000000000099'),
+      null
+    );
+
+    await pool.query('DELETE FROM users WHERE email = $1', [email]);
+    const afterCascade = await pool.query(
+      'SELECT COUNT(*)::int AS count FROM lesson_plan_versions WHERE lesson_plan_id = $1',
+      [response.body.plano.id]
+    );
+    assert.equal(afterCascade.rows[0].count, 0);
   } finally {
     await pool.query('DELETE FROM users WHERE email = $1', [email]);
     await pool.end();

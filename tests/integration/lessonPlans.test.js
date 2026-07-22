@@ -8,13 +8,16 @@ const invokeApp = require('../setup/invokeApp');
 function createMemoryDb() {
   const users = [];
   const plans = [];
+  const versions = [];
   let userCounter = 0;
   let planCounter = 0;
 
   return {
     users,
     plans,
+    versions,
     async query(text, values = []) {
+      if (/^(BEGIN|COMMIT|ROLLBACK)/.test(text.trim())) return { rows: [] };
       if (text.includes('SELECT 1')) return { rows: [{ '?column?': 1 }] };
 
       if (text.includes('INSERT INTO users')) {
@@ -57,11 +60,30 @@ function createMemoryDb() {
           content,
           ai_model: aiModel,
           prompt_version: promptVersion,
+          current_version: 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
         plans.push(plan);
         return { rows: [plan] };
+      }
+
+      if (text.includes('INSERT INTO lesson_plan_versions')) {
+        const [lessonPlanId, tema, nivelEnsino, duracaoMinutos, codigoBNCC, content] = values;
+        const version = {
+          id: `version-${versions.length + 1}`,
+          lesson_plan_id: lessonPlanId,
+          version_number: 1,
+          source: 'ai',
+          tema,
+          nivel_ensino: nivelEnsino,
+          duracao_minutos: duracaoMinutos,
+          codigo_bncc: codigoBNCC,
+          content,
+          created_at: new Date().toISOString(),
+        };
+        versions.push(version);
+        return { rows: [version] };
       }
 
       if (text.includes('FROM lesson_plans') && text.includes('COUNT(*) OVER')) {
@@ -166,6 +188,8 @@ test('fluxo moderno gera, lista e isola planos por usuário', async () => {
 
   assert.equal(generated.status, 201);
   assert.equal(db.plans.length, 1);
+  assert.equal(db.versions.length, 1);
+  assert.equal(db.versions[0].version_number, 1);
   assert.equal(generated.body.plano.status, 'draft');
   assert.equal(generated.body.plano.conteudo.titulo, 'Plano de teste');
 

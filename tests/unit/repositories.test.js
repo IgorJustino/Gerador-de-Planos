@@ -50,7 +50,8 @@ test('lessonPlanRepository mapeia camelCase para snake_case', async () => {
   });
 
   assert.equal(plan.id, 'plan-1');
-  assert.deepEqual(db.calls[0].values, [
+  const planInsert = db.calls.find((call) => call.text.includes('INSERT INTO lesson_plans'));
+  assert.deepEqual(planInsert.values, [
     'user-1',
     'Fotossíntese',
     '5º ano',
@@ -61,8 +62,10 @@ test('lessonPlanRepository mapeia camelCase para snake_case', async () => {
     'test-model',
     'v1',
   ]);
-  assert.match(db.calls[0].text, /nivel_ensino/);
-  assert.match(db.calls[0].text, /codigo_bncc/);
+  assert.match(planInsert.text, /nivel_ensino/);
+  assert.match(planInsert.text, /codigo_bncc/);
+  assert.match(db.calls[0].text, /BEGIN/);
+  assert.match(db.calls.at(-1).text, /COMMIT/);
 });
 
 test('listagem aplica paginação e limita o tamanho máximo', async () => {

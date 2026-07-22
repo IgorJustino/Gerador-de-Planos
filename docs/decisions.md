@@ -110,6 +110,23 @@ O frontend principal usa somente `/api/auth/*` e `/api/planos/*`. A resposta da
 IA é renderizada com criação de elementos e `textContent`, sem interpolar dados
 externos em `innerHTML`. O legado Supabase não faz parte da arquitetura ativa.
 
+## ADR-011 — Versionamento por snapshots completos
+
+**Decisão:** cada versão de um plano será armazenada como um snapshot completo
+em `lesson_plan_versions`. O registro em `lesson_plans` continuará mantendo o
+snapshot atual e o campo `current_version`.
+
+A criação inicial grava o plano e a versão 1 na mesma transação. A criação de
+versões posteriores bloqueia o plano com `SELECT ... FOR UPDATE`, calcula o
+próximo número, insere o snapshot e atualiza o registro atual antes do commit.
+Também existe uma constraint única em `(lesson_plan_id, version_number)` como
+proteção adicional contra duplicidades.
+
+As versões aceitam as origens `ai` e `manual` e usam `ON DELETE CASCADE`.
+Escolhemos snapshots completos para permitir a reconstrução exata do plano em
+qualquer ponto do histórico, incluindo tema, nível, duração, código BNCC e
+conteúdo estruturado.
+
 ## ADR-007 — BNCC e RAG
 
 **Decisão:** separar a evolução em duas fases.
