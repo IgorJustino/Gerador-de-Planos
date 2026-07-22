@@ -7,7 +7,7 @@ Express, PostgreSQL e Gemini.
 
 - Node.js 22 ou superior;
 - Docker e Docker Compose;
-- chave Gemini somente para os fluxos que chamam a IA.
+- chave Gemini para geração real e embeddings reais.
 
 ## Desenvolvimento local
 
@@ -31,7 +31,9 @@ Migrations não são executadas automaticamente pelo processo web.
 
 ## Status da modernização
 
-Os Marcos 2, 3A, 3B, 3C, 3D, 3E, 4A, 4B e 4C estão concluídos. O fluxo principal usa
+Os Marcos 2, 3A, 3B, 3C, 3D, 3E, 4A, 4B e 4C estão concluídos. A sprint de IA
+avançada adicionou catálogo BNCC reduzido, `pgvector`, busca textual, busca
+semântica mockável e contexto BNCC no prompt. O fluxo principal usa
 autenticação própria por cookie `httpOnly`, Gemini com JSON estruturado,
 PostgreSQL, histórico privado por usuário e versionamento transacional. O
 legado do Supabase foi removido da arquitetura ativa.
@@ -40,8 +42,9 @@ O frontend moderno não armazena JWT, não usa Supabase e renderiza a resposta d
 IA com `textContent` e elementos DOM. A interface permite editar planos,
 salvar novas versões manuais, consultar snapshots anteriores, alterar status,
 excluir planos com confirmação, filtrar o histórico, registrar feedback e ver
-um resumo básico de uso. Ainda não há RAG, embeddings, `pgvector` ou
-exportação.
+um resumo básico de uso. Também permite buscar e selecionar uma habilidade BNCC
+antes da geração. Ainda não há catálogo oficial completo, PDF, compartilhamento
+ou upload de documentos.
 
 ## API
 
@@ -49,3 +52,5 @@ Os endpoints estão documentados em [`docs/API.md`](docs/API.md). As operações
 de edição exigem `expectedVersion` e criam snapshots manuais sem sobrescrever
 o histórico anterior. Deploy e métricas estão documentados em
 [`docs/deployment.md`](docs/deployment.md) e [`docs/metrics.md`](docs/metrics.md).
+O fluxo de IA contextual está documentado em
+[`docs/AI_PIPELINE.md`](docs/AI_PIPELINE.md).

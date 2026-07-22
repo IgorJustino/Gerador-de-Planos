@@ -151,9 +151,23 @@ latência não estiver persistida de forma confiável.
 
 ## ADR-014 — Produto antes de RAG
 
-**Decisão:** a sprint atual melhora produto, UX, feedback, métricas e preparo
-de deploy. Catálogo BNCC completo, embeddings, `pgvector` e RAG ficam para uma
-sprint futura de IA avançada.
+**Decisão:** a sprint de produto melhorou UX, feedback, métricas e preparo de
+deploy antes da camada de IA avançada. A sprint seguinte implementou BNCC
+contextual, embeddings, `pgvector` e RAG em escopo controlado.
+
+## ADR-015 — BNCC contextual com RAG
+
+**Decisão:** adicionar catálogo BNCC em `bncc_skills`, busca textual,
+embedding `vector(768)` e tabela `lesson_plan_bncc_skills` para rastrear as
+habilidades usadas em cada geração.
+
+O sistema pode usar uma habilidade selecionada pelo usuário ou recuperar
+habilidades por similaridade. Esse contexto entra no prompt dentro de
+`<contexto_bncc>`. A resposta continua sendo validada por schema estruturado.
+
+O catálogo inicial é reduzido e fictício para desenvolvimento. O sistema não
+afirma validação oficial automática do plano; ele informa que usa contexto
+recuperado como referência.
 
 ## ADR-007 — BNCC e RAG
 

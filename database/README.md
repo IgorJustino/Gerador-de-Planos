@@ -44,7 +44,8 @@ O Marco 2 criou a extensão `pgcrypto` e a tabela base `users`. A 3A adiciona
 adiciona `lesson_plan_versions` e `lesson_plans.current_version`, mantendo um
 snapshot completo para cada versão e fazendo backfill da versão 1 para planos
 existentes. A sprint de produto adiciona `lesson_plan_feedbacks`, com um
-feedback por usuário e plano.
+feedback por usuário e plano. A sprint de IA avançada adiciona `bncc_skills`,
+`lesson_plan_bncc_skills`, `pg_trgm` e `vector`.
 
 ## Versionamento de planos
 
@@ -65,6 +66,20 @@ comentário opcional. A constraint `UNIQUE (lesson_plan_id, user_id)` mantém um
 feedback por usuário em cada plano; novo envio atualiza o registro existente.
 A foreign key usa `ON DELETE CASCADE`, portanto feedbacks são removidos junto
 com o plano ou usuário.
+
+## BNCC e pgvector
+
+`bncc_skills` armazena habilidades BNCC em catálogo estruturado. A base inicial
+contém poucos registros fictícios para desenvolvimento e não representa uma
+carga oficial completa.
+
+`lesson_plan_bncc_skills` registra quais habilidades foram selecionadas ou
+recuperadas para um plano. O campo `source` aceita `selected` e `retrieved`.
+
+O desenvolvimento usa a imagem Docker `pgvector/pgvector:pg16`. A coluna
+`bncc_skills.embedding` usa `vector(768)`. Os embeddings do seed são
+demonstrativos; embeddings reais dependem de `GEMINI_API_KEY` e
+`EMBEDDING_MODEL`.
 
 O seed cria o usuário fictício `demo@example.com` com a senha `demo123` para
 uso local. Essa credencial não deve ser usada em produção.

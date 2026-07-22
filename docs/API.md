@@ -150,15 +150,45 @@ planosUltimos7Dias
 ultimosPlanos
 ```
 
+## BNCC
+
+```text
+GET /api/bncc/search
+GET /api/bncc/:code
+POST /api/bncc/semantic-search
+```
+
+Busca textual:
+
+```text
+GET /api/bncc/search?q=energia&subject=Ciências&page=1&limit=10
+```
+
+Busca semântica:
+
+```json
+{
+  "query": "aula sobre fotossíntese para ensino fundamental",
+  "limit": 5
+}
+```
+
+O catálogo inicial é reduzido e fictício para desenvolvimento. A geração de
+planos pode receber `codigoBNCC` e `bnccSkillId`; quando uma habilidade é
+selecionada ou recuperada, o sistema registra a rastreabilidade em
+`lesson_plan_bncc_skills`.
+
 ## Erros comuns
 
 ```text
 400 VALIDATION_ERROR
 400 INVALID_PLAN_DURATION
 401 UNAUTHORIZED
+404 BNCC_SKILL_NOT_FOUND
 404 PLAN_NOT_FOUND ou VERSION_NOT_FOUND
 409 VERSION_CONFLICT ou INVALID_STATUS_TRANSITION
 429 RATE_LIMIT_EXCEEDED
+503 EMBEDDING_CONFIGURATION_ERROR
 ```
 
 O frontend do Marco 4C consome estes endpoints para edição, histórico de

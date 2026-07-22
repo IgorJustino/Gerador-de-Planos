@@ -79,6 +79,21 @@
                         autocomplete="off"
                     >
                 </div>
+
+                <div class="form-group">
+                    <label for="bnccBusca">Buscar habilidade BNCC</label>
+                    <div class="inline-search">
+                        <input
+                            type="text"
+                            id="bnccBusca"
+                            placeholder="Ex: fotossíntese, Ciências, EF05CI01"
+                            autocomplete="off"
+                        >
+                        <button type="button" class="btn-acao btn-ver" id="btnBuscarBNCC">Buscar</button>
+                    </div>
+                    <div id="bnccSelecionada" class="selected-skill" hidden></div>
+                    <div id="bnccResultados" class="bncc-results" aria-live="polite"></div>
+                </div>
                 
                 <div class="form-group">
                     <label for="contextoAdicional">Contexto adicional (opcional)</label>

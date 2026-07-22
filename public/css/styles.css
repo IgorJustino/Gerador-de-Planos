@@ -749,6 +749,46 @@ footer p {
     width: auto;
 }
 
+.inline-search {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+}
+
+.bncc-results {
+    margin-top: 12px;
+}
+
+.bncc-result,
+.selected-skill {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.bncc-result {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.bncc-result-info {
+    flex: 1;
+}
+
+.bncc-code {
+    color: #2d3748;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.bncc-description {
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
     .plano-item {
         flex-direction: column;
@@ -781,6 +821,12 @@ footer p {
     }
 
     .filters-actions {
+        flex-direction: column;
+    }
+
+    .inline-search,
+    .bncc-result {
+        grid-template-columns: 1fr;
         flex-direction: column;
     }
 }

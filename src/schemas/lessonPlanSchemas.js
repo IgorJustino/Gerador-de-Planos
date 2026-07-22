@@ -12,6 +12,7 @@ const lessonPlanGenerationSchema = z
       .max(50)
       .regex(/^[A-Za-z]{2}\d{2}[A-Za-z]{2}\d{2}$/, 'Código BNCC inválido')
       .optional(),
+    bnccSkillId: z.string().uuid('Habilidade BNCC inválida').optional(),
     contextoAdicional: z.string().trim().max(1000).optional(),
   })
   .strict();

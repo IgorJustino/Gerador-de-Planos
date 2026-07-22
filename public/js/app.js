@@ -3,6 +3,7 @@
         user: null,
         plans: [],
         selectedPlan: null,
+        selectedBnccSkill: null,
         viewedVersion: null,
         pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
         versionsPagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
@@ -62,6 +63,10 @@
     const feedbackMessage = document.getElementById('feedbackMessage');
     const filtersForm = document.getElementById('formFiltros');
     const clearFiltersButton = document.getElementById('btnLimparFiltros');
+    const bnccSearchInput = document.getElementById('bnccBusca');
+    const bnccSearchButton = document.getElementById('btnBuscarBNCC');
+    const bnccSelected = document.getElementById('bnccSelecionada');
+    const bnccResults = document.getElementById('bnccResultados');
 
     function redirectToLogin() {
         if (state.redirecting || window.location.pathname.endsWith('/login.html')) return;
@@ -161,6 +166,78 @@
         metricsCard.hidden = false;
     }
 
+    function renderSelectedBnccSkill() {
+        bnccSelected.replaceChildren();
+        if (!state.selectedBnccSkill) {
+            bnccSelected.hidden = true;
+            return;
+        }
+
+        const skill = state.selectedBnccSkill;
+        const info = element('div', 'bncc-result-info');
+        info.append(
+            element('p', 'bncc-code', skill.code),
+            element('p', 'bncc-description', `${skill.subject} · ${skill.educationStage}${skill.schoolYear ? ` · ${skill.schoolYear}` : ''}`),
+            element('p', 'bncc-description', skill.description)
+        );
+        const clear = element('button', 'btn-acao btn-deletar', 'Limpar');
+        clear.type = 'button';
+        clear.addEventListener('click', () => {
+            state.selectedBnccSkill = null;
+            document.getElementById('codigoBNCC').value = '';
+            renderSelectedBnccSkill();
+        });
+        bnccSelected.append(info, clear);
+        bnccSelected.hidden = false;
+    }
+
+    function renderBnccResults(items) {
+        bnccResults.replaceChildren();
+        if (!items || items.length === 0) {
+            AppUi.showStatus(bnccResults, 'Nenhuma habilidade encontrada.', 'info');
+            return;
+        }
+
+        items.forEach((skill) => {
+            const item = element('article', 'bncc-result');
+            const info = element('div', 'bncc-result-info');
+            info.append(
+                element('p', 'bncc-code', skill.code),
+                element('p', 'bncc-description', `${skill.subject} · ${skill.educationStage}${skill.schoolYear ? ` · ${skill.schoolYear}` : ''}`),
+                element('p', 'bncc-description', skill.description)
+            );
+            const select = element('button', 'btn-acao btn-ver', 'Selecionar');
+            select.type = 'button';
+            select.addEventListener('click', () => {
+                state.selectedBnccSkill = skill;
+                document.getElementById('codigoBNCC').value = skill.code;
+                renderSelectedBnccSkill();
+                bnccResults.replaceChildren();
+            });
+            item.append(info, select);
+            bnccResults.append(item);
+        });
+    }
+
+    async function searchBnccSkills() {
+        const query = bnccSearchInput.value.trim();
+        if (query.length < 2) {
+            AppUi.showStatus(bnccResults, 'Digite ao menos 2 caracteres para buscar.', 'error');
+            return;
+        }
+
+        AppUi.setBusy(bnccSearchButton, true, 'Buscando...', 'Buscar');
+        AppUi.showLoading(bnccResults, 'Buscando habilidades BNCC...');
+        try {
+            const payload = await ApiClient.request(`/api/bncc/search?${buildQuery({ q: query, limit: 5 })}`);
+            renderBnccResults(payload?.items || []);
+        } catch (error) {
+            if (error.status !== 401) AppUi.showStatus(bnccResults, errorMessage(error, 'Não foi possível buscar habilidades.'), 'error');
+        } finally {
+            AppUi.setBusy(bnccSearchButton, false, 'Buscando...', 'Buscar');
+        }
+    }
+
     async function loadMetrics() {
         if (state.loading.metrics) return;
         state.loading.metrics = true;
@@ -206,6 +283,7 @@
             nivelEnsino: document.getElementById('nivelEnsino').value.trim(),
             duracaoMinutos: Number(document.getElementById('duracao').value),
             codigoBNCC: document.getElementById('codigoBNCC').value.trim() || undefined,
+            bnccSkillId: state.selectedBnccSkill?.id,
             contextoAdicional: document.getElementById('contextoAdicional').value.trim() || undefined,
         };
     }
@@ -711,6 +789,17 @@
     document.getElementById('duracao').addEventListener('input', validateForm);
     document.getElementById('codigoBNCC').addEventListener('input', (event) => {
         event.target.value = event.target.value.toUpperCase();
+        if (state.selectedBnccSkill && event.target.value !== state.selectedBnccSkill.code) {
+            state.selectedBnccSkill = null;
+            renderSelectedBnccSkill();
+        }
+    });
+    bnccSearchButton.addEventListener('click', searchBnccSkills);
+    bnccSearchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchBnccSkills();
+        }
     });
     document.getElementById('editCodigoBNCC').addEventListener('input', (event) => {
         event.target.value = event.target.value.toUpperCase();

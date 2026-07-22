@@ -54,3 +54,9 @@ services:
         value: "30000"
       - key: GEMINI_MAX_RETRIES
         value: "1"
+      - key: EMBEDDING_MODEL
+        value: text-embedding-004
+      - key: EMBEDDING_DIMENSION
+        value: "768"
+      - key: EMBEDDING_TIMEOUT_MS
+        value: "15000"

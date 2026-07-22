@@ -26,6 +26,7 @@ function serializeLessonPlan(plan) {
     versaoPrompt: plan.prompt_version,
     criadoEm: plan.created_at,
     atualizadoEm: plan.updated_at,
+    habilidadesBNCCUsadas: plan.habilidadesBNCCUsadas || [],
   };
 }
 
@@ -70,11 +71,18 @@ function validationDetails(validation) {
 function createLessonPlanService({
   db,
   geminiService,
+  bnccService = null,
   repository = lessonPlanRepository,
   versionRepository = lessonPlanVersionRepository,
 }) {
   async function generateLessonPlan({ userId, input }) {
-    const prompt = buildLessonPlanPrompt(input);
+    const bnccContext = bnccService
+      ? await bnccService.resolveGenerationContext(input)
+      : [];
+    const prompt = buildLessonPlanPrompt({
+      ...input,
+      bnccContext,
+    });
     const generated = await geminiService.generateStructuredLessonPlan({
       prompt,
       expectedDurationMinutes: input.duracaoMinutos,
@@ -91,6 +99,11 @@ function createLessonPlanService({
       aiModel: generated.model,
       promptVersion: generated.promptVersion || PROMPT_VERSION,
     });
+
+    if (bnccService && bnccContext.length > 0) {
+      await bnccService.attachSkillsToPlan({ planId: plan.id, skills: bnccContext });
+      plan.habilidadesBNCCUsadas = await bnccService.findSkillsByPlan(plan.id);
+    }
 
     return serializeLessonPlan(plan);
   }
@@ -118,6 +131,9 @@ function createLessonPlanService({
 
   async function findLessonPlan({ userId, id }) {
     const plan = await repository.findLessonPlanByIdAndUser(db, id, userId);
+    if (plan && bnccService) {
+      plan.habilidadesBNCCUsadas = await bnccService.findSkillsByPlan(plan.id);
+    }
     return plan ? serializeLessonPlan(plan) : null;
   }
 

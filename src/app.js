@@ -7,10 +7,13 @@ const { getEnv } = require('./config/env');
 const { createPool } = require('./config/database');
 const createSystemRoutes = require('./routes/systemRoutes');
 const createAuthRoutes = require('./routes/authRoutes');
+const createBnccRoutes = require('./routes/bnccRoutes');
 const createFeedbackRoutes = require('./routes/feedbackRoutes');
 const createLessonPlanRoutes = require('./routes/lessonPlanRoutes');
 const createMetricsRoutes = require('./routes/metricsRoutes');
 const { createAuthService } = require('./services/authService');
+const { createBnccService } = require('./services/bnccService');
+const { createEmbeddingService } = require('./services/embeddingService');
 const { createFeedbackService } = require('./services/feedbackService');
 const { createGeminiService } = require('./services/structuredGeminiService');
 const { createLessonPlanService } = require('./services/lessonPlanService');
@@ -22,10 +25,16 @@ function createApp(options = {}) {
   const env = options.env || getEnv();
   const pool = options.pool || createPool(env);
   const authService = options.authService || createAuthService({ db: pool, env });
+  const embeddingService = options.embeddingService || createEmbeddingService({ env });
+  const bnccService = options.bnccService || createBnccService({
+    db: pool,
+    embeddingService,
+  });
   const geminiService = options.geminiService || createGeminiService({ env });
   const lessonPlanService = options.lessonPlanService || createLessonPlanService({
     db: pool,
     geminiService,
+    bnccService,
   });
   const feedbackService = options.feedbackService || createFeedbackService({ db: pool });
   const metricsService = options.metricsService || createMetricsService({ db: pool });
@@ -65,6 +74,11 @@ function createApp(options = {}) {
 
   app.use(createSystemRoutes({ pool }));
   app.use('/api/auth', createAuthRoutes({ authService, env }));
+  app.use('/api/bncc', createBnccRoutes({
+    authService,
+    env,
+    bnccService,
+  }));
   app.use('/api/metrics', createMetricsRoutes({
     authService,
     env,

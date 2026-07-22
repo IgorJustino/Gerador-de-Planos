@@ -149,8 +149,17 @@ function createTestApp() {
       return { content, model: 'test-model', promptVersion: 'lesson-plan-v1', latencyMs: 1 };
     },
   };
+  const bnccService = {
+    async resolveGenerationContext() {
+      return [];
+    },
+    async attachSkillsToPlan() {},
+    async findSkillsByPlan() {
+      return [];
+    },
+  };
 
-  return { app: createApp({ env, pool: db, geminiService }), db };
+  return { app: createApp({ env, pool: db, geminiService, bnccService }), db };
 }
 
 test('fluxo moderno gera, lista e isola planos por usuário', async () => {

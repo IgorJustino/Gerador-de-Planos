@@ -63,6 +63,9 @@ function getEnv(source = process.env) {
       Math.max(parseInteger(source.GEMINI_MAX_RETRIES, 1), 0),
       1
     ),
+    embeddingModel: source.EMBEDDING_MODEL || 'text-embedding-004',
+    embeddingDimension: parseInteger(source.EMBEDDING_DIMENSION, 768),
+    embeddingTimeoutMs: parseInteger(source.EMBEDDING_TIMEOUT_MS, 15000),
   };
 }
 

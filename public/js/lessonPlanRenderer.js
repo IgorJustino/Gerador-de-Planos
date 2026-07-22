@@ -38,6 +38,7 @@
             versaoAtual: plan.versaoAtual || plan.current_version || 1,
             criadoEm: plan.criadoEm || plan.created_at,
             atualizadoEm: plan.atualizadoEm || plan.updated_at,
+            habilidadesBNCCUsadas: plan.habilidadesBNCCUsadas || [],
         };
     }
 
@@ -134,6 +135,12 @@
 
         const bncc = (content.habilidadesBNCC || []).map((skill) => `${skill.codigo}: ${skill.descricao}`);
         appendSection(card, '📚', 'Habilidades BNCC informadas', bncc, 'Nenhuma habilidade informada.');
+
+        const traced = (plan.habilidadesBNCCUsadas || []).map((skill) => {
+            const origin = skill.relationSource === 'selected' ? 'selecionada' : 'recuperada';
+            return `${skill.code}: ${skill.description} (${origin})`;
+        });
+        appendSection(card, '🔎', 'Contexto BNCC recuperado', traced, 'Nenhum contexto BNCC registrado.');
 
         container.style.display = 'block';
         container.replaceChildren(card);
